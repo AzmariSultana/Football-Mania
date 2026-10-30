@@ -177,7 +177,9 @@ export class Stadium {
     key.position.copy(DAY.keyPos);
     key.target.position.set(0, 0, 350);
     key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
+    // Phones and tablets get a lighter shadow map.
+    const touch = window.matchMedia?.('(pointer: coarse)').matches;
+    key.shadow.mapSize.setScalar(touch ? 1024 : 2048);
     const sc = key.shadow.camera;
     sc.left = -1000; sc.right = 1000; sc.top = 900; sc.bottom = -900;
     sc.near = 200; sc.far = 4000;

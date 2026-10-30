@@ -11,6 +11,13 @@
   <img alt="WebGL 2" src="https://img.shields.io/badge/WebGL-2-990000?logo=webgl&logoColor=white">
   <img alt="No build step" src="https://img.shields.io/badge/build-none-brightgreen">
   <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen">
+  <img alt="Installable PWA" src="https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white">
+</p>
+
+<p align="center">
+  <a href="https://azmarisultana.github.io/Football-Mania/"><b>▶ Play now in your browser</b></a>
+  &nbsp;·&nbsp;
+  <a href="#install-on-your-phone">Install on your phone</a>
 </p>
 
 <p align="center">
@@ -24,6 +31,7 @@
 - [Screenshots](#screenshots)
 - [Features](#features)
 - [Quick start](#quick-start)
+- [Install on your phone](#install-on-your-phone)
 - [How to play](#how-to-play)
 - [Controls](#controls)
 - [Technologies](#technologies)
@@ -92,9 +100,15 @@
 - Keyboard and mouse, gamepad, or touch.
 - Third-person and first-person cameras.
 
+**Installable**
+- Add it to your home screen and it runs full screen like a native app.
+- Works offline after the first visit.
+
 ## Quick start
 
-Requires [Node.js](https://nodejs.org/) 18 or newer. There is nothing to install.
+**Play online:** https://azmarisultana.github.io/Football-Mania/
+
+**Run it locally:** requires [Node.js](https://nodejs.org/) 18 or newer. There is nothing to install.
 
 ```bash
 git clone https://github.com/AzmariSultana/Football-Mania.git
@@ -109,6 +123,20 @@ Open **http://localhost:8080** in a modern desktop browser (Chrome, Edge, Firefo
 > Any static server can serve the folder instead, for example `npx serve` or `python -m http.server 8080`.
 > To change the port, set `PORT` (e.g. `PORT=3000 npm start`).
 > Three.js and the fonts load from CDNs, so you need an internet connection on first load.
+
+Every push to `main` deploys to GitHub Pages through [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
+
+## Install on your phone
+
+Football Mania is a Progressive Web App. Once installed, it opens full screen in landscape from its own home-screen icon and works offline.
+
+| Device | How to install |
+|:--|:--|
+| **Android** (Chrome, Edge, Samsung Internet) | Open the [game](https://azmarisultana.github.io/Football-Mania/) and tap **Install app** on the main menu, or open the browser menu and choose **Install app** / **Add to Home screen**. |
+| **iPhone / iPad** (Safari) | Open the [game](https://azmarisultana.github.io/Football-Mania/), tap **Share**, then **Add to Home Screen**. |
+| **Desktop** (Chrome, Edge) | Click **Install app** on the main menu, or the install icon in the address bar. |
+
+Installed copies update automatically: each deploy gets a new offline cache, picked up the next time the app is opened online.
 
 ## How to play
 
@@ -188,7 +216,7 @@ Best scores, achievements, stickers and the daily streak are saved in your brows
 | Pause / resume | <kbd>P</kbd> or <kbd>Esc</kbd> | <kbd>Start</kbd> |
 | Mute / help | <kbd>M</kbd> / <kbd>H</kbd> | |
 
-**Touch:** press and drag to aim while charging, then lift your finger to shoot.
+**Touch:** press and drag to aim while charging, then lift your finger to shoot. Tap the ◀ ▶ buttons on the curve meter to curve, and tap the power-up slot to use it.
 
 ## Technologies
 
@@ -199,9 +227,11 @@ Best scores, achievements, stickers and the daily streak are saved in your brows
 | **Web Audio API** | Every sound effect and the crowd ambience are synthesised in code, so there are no audio files |
 | **HTML and CSS** | HUD and menus layered over the canvas, with a responsive layout and support for reduced motion |
 | **Gamepad API, localStorage** | Controller support and saved progress |
+| **PWA (Web App Manifest, Service Worker)** | Installable to the home screen, full screen in landscape, playable offline |
+| **GitHub Actions + Pages** | Automatic deployment on every push to `main` |
 | **Node.js** | A tiny dependency-free static server for local play |
 
-All 3D models, textures and sounds are generated in code. The only binary files in the repository are the README screenshots.
+All 3D models, textures and sounds are generated in code. The only binary files in the repository are the app icons and the README screenshots.
 
 <details>
 <summary><b>Under the hood</b></summary>
@@ -219,11 +249,15 @@ All 3D models, textures and sounds are generated in code. The only binary files 
 
 ```
 ├── index.html            page shell, HUD and menus
+├── manifest.json         app manifest (name, icons, full screen, landscape)
+├── sw.js                 service worker for offline play
+├── icons/                app and home-screen icons
 ├── css/
 │   ├── style.css         base UI styling
 │   └── features.css      streaks, bosses, power-ups, replays, trophy room
 ├── src/
 │   ├── main.js           renderer setup and main loop
+│   ├── pwa.js            service worker registration and install button
 │   ├── game.js           game state machine, shooting, scoring, modes and rewards
 │   ├── config.js         gameplay constants
 │   ├── physics.js        shot trajectory and collisions
@@ -237,7 +271,8 @@ All 3D models, textures and sounds are generated in code. The only binary files 
 │   ├── fx/               GPU particles
 │   ├── world/            stadium, goal and net, collectibles
 │   └── entities/         ball, keeper, kicker, wall, shared player model
-├── docs/screenshots/     README images
+├── docs/screenshots/     README images (also used by the install dialog)
+├── .github/workflows/    GitHub Pages deployment
 ├── server.js             static server used by `npm start`
 ├── package.json
 └── football_mania.py     original Python/OpenGL version

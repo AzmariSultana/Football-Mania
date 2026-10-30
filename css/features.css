@@ -124,6 +124,11 @@
 .ach-toast.tinted { border-color: var(--c, var(--gold)); }
 .ach-toast.tinted .kicker { color: var(--c, var(--gold)); }
 
+#btn-install { display: inline-flex; align-items: center; gap: 8px; }
+#btn-install svg { width: 18px; height: 18px; fill: currentColor; }
+.install-hint { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+.install-hint b { color: var(--text); }
+
 #btn-trophies .count { margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); font-size: 11px; }
 
 .trophies {
@@ -201,6 +206,63 @@
 @keyframes bar-in { from { transform: scaleY(0); } }
 @keyframes slide-in { from { opacity: 0; transform: translateX(40px); } }
 @keyframes slide-out { to { opacity: 0; transform: translateX(40px); } }
+
+.curve-keys { display: inline-flex; gap: 4px; }
+.key-btn {
+  pointer-events: auto;
+  min-width: 26px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom-width: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  font: 600 10px var(--body);
+  color: var(--text);
+  cursor: pointer;
+}
+.key-btn:hover { background: rgba(255, 255, 255, 0.18); }
+.key-btn:active { transform: translateY(1px); }
+
+/* Touch screens: bigger tap targets, curve buttons show arrows instead of key names. */
+@media (pointer: coarse) {
+  .key-btn { min-width: 40px; min-height: 30px; font-size: 0; }
+  #btn-curve-left::before { content: '◀'; font-size: 13px; }
+  #btn-curve-right::before { content: '▶'; font-size: 13px; }
+}
+
+/* Phones in landscape: compact HUD so the pitch stays visible. */
+@media (max-height: 520px) {
+  .hud-top { top: 8px; left: 10px; right: 10px; gap: 8px; }
+  .score-panel { padding: 6px 12px 8px; min-width: 110px; }
+  .score-panel .big { font-size: 32px; }
+  .misses i { width: 11px; height: 11px; }
+  .chip { padding: 4px 10px; font-size: 10px; }
+  .timer { width: 48px; height: 48px; }
+  .timer span { font-size: 22px; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 10px; }
+  .icon-btn svg { width: 17px; height: 17px; }
+  #btn-help { display: none; }
+  .wind { padding: 5px 10px 5px 8px; }
+  .wind svg { width: 20px; height: 20px; }
+  .wind b { font-size: 16px; }
+  .hud-bottom { bottom: 8px; left: 10px; gap: 6px; }
+  .meter { padding: 6px 12px 8px; }
+  .meter .label { margin-bottom: 5px; }
+  .power-meter { width: min(240px, 40vw); }
+  .curve-meter { width: 170px; }
+  .powerup { padding: 4px 12px 4px 4px; }
+  .powerup .pu-icon { width: 30px; height: 30px; font-size: 17px; }
+  #achievement-stack { top: 96px; right: 10px; }
+  .ach-toast { min-width: 200px; padding: 6px 12px 6px 6px; }
+  .ach-toast .icon { width: 32px; height: 32px; font-size: 18px; }
+  #toast { top: 70px; }
+  .banner-title { font-size: clamp(48px, 16vh, 110px); }
+  .screen { place-items: start center; padding-top: 12px; }
+  .dialog { padding: 18px; }
+  .title { font-size: clamp(48px, 20vh, 110px); }
+  .lead { margin-bottom: 16px; font-size: 15px; }
+  .zones-legend { margin-top: 16px; }
+}
 
 @media (max-width: 1100px) {
   .mode-grid { grid-template-columns: repeat(2, 1fr); }

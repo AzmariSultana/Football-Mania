@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Game } from './game.js';
+import { setupPwa } from './pwa.js';
 
 // Replaces python main(): GLUT window + idle loop -> WebGL canvas + requestAnimationFrame.
 
@@ -76,4 +77,5 @@ function start() {
   window.footballMania = game; // handy for debugging from the console
 }
 
+setupPwa();
 start();

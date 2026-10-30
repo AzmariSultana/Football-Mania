@@ -35,6 +35,9 @@ export class UI {
     on('btn-sound', () => handlers.onToggleMute());
     on('btn-help', () => handlers.onHelp());
     on('btn-end', () => handlers.onEnd());
+    // Tappable curve controls (touch screens have no Q/E keys).
+    $('btn-curve-left').addEventListener('click', (e) => { e.stopPropagation(); e.currentTarget.blur(); handlers.onCurve(-1); });
+    $('btn-curve-right').addEventListener('click', (e) => { e.stopPropagation(); e.currentTarget.blur(); handlers.onCurve(1); });
     $('btn-powerup').addEventListener('click', (e) => {
       e.stopPropagation();
       e.currentTarget.blur();

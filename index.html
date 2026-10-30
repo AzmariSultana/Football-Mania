@@ -2,10 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Football Mania 3D</title>
   <meta name="description" content="Free kick challenge in 3D: beat the wall and the keeper, aim for the top corners.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+  <!-- Installable app (PWA) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#070b14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Football Mania">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
@@ -77,7 +86,12 @@
 
       <div class="hud-bottom">
         <div class="panel meter curve-meter">
-          <div class="label">Curve <kbd>Q</kbd> <kbd>E</kbd></div>
+          <div class="label">Curve
+            <span class="curve-keys">
+              <button class="key-btn" id="btn-curve-left" title="Curve left (Q)" aria-label="Curve left">Q</button>
+              <button class="key-btn" id="btn-curve-right" title="Curve right (E)" aria-label="Curve right">E</button>
+            </span>
+          </div>
           <div class="curve-track"><div class="curve-center"></div><div class="curve-knob" id="curve-knob"></div></div>
         </div>
         <div class="panel meter power-meter">
@@ -120,7 +134,12 @@
           <button class="btn primary" id="btn-play">Play</button>
           <button class="btn ghost" id="btn-menu-help">How to play</button>
           <button class="btn ghost" id="btn-trophies">Trophies <span class="count" id="trophy-count">0/0</span></button>
+          <button class="btn ghost hidden" id="btn-install" title="Install Football Mania as an app">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v9.6l3.3-3.3 1.4 1.4L12 16.4l-5.7-5.7 1.4-1.4 3.3 3.3zM5 19h14v2H5z"/></svg>
+            Install app
+          </button>
         </div>
+        <p class="install-hint hidden" id="install-hint">On iPhone or iPad: tap <b>Share</b>, then <b>Add to Home Screen</b> to install.</p>
         <div class="zones-legend">
           <span><i class="dot gold"></i>Top corners · 9</span>
           <span><i class="dot blue"></i>Bottom corners · 5</span>

@@ -131,6 +131,7 @@ export class Game {
       onHelpClosed: () => this.closeHelp(),
       onEnd: () => this.endGame(),
       onPowerup: () => this.activatePowerup(),
+      onCurve: (dir) => this.adjustCurve(dir),
       onTrophies: () => this.ui.showTrophies(this.progress),
     });
     this.refreshMenu();
