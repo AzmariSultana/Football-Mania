@@ -1,0 +1,9 @@
+{
+  "name": "football-mania",
+  "version": "2.0.0",
+  "description": "3D free kick game built with Three.js, ported from the original PyOpenGL version.",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  }
+}

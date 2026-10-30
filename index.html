@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Football Mania 3D</title>
+  <meta name="description" content="Free kick challenge in 3D: beat the wall and the keeper, aim for the top corners.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/features.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene" aria-label="Football Mania 3D game view"></canvas>
+
+  <div id="ui">
+    <!-- In-game HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-top">
+        <div class="panel score-panel">
+          <div class="label">Points</div>
+          <div class="score-row">
+            <div id="hud-score" class="big">0</div>
+            <div id="hud-mult" class="mult hidden">×1.5</div>
+          </div>
+          <div class="misses" id="hud-misses" aria-label="Misses remaining"></div>
+          <div class="kicks hidden" id="hud-kicks">Kick 1 / 10</div>
+        </div>
+
+        <div class="hud-center">
+          <div class="chip" id="hud-mode">Mode</div>
+          <div id="hud-timer" class="timer hidden">
+            <svg viewBox="0 0 44 44" aria-hidden="true">
+              <circle class="track" cx="22" cy="22" r="19"></circle>
+              <circle class="ring" id="hud-timer-ring" cx="22" cy="22" r="19"></circle>
+            </svg>
+            <span id="hud-timer-text">30</span>
+          </div>
+          <div class="chip subtle" id="hud-info"></div>
+          <div class="chip boss hidden" id="hud-boss"></div>
+        </div>
+
+        <div class="hud-right">
+        <div class="hud-buttons">
+          <button class="icon-btn" id="btn-pause" title="Pause (P)" aria-label="Pause">
+            <svg viewBox="0 0 24 24"><path class="i-pause" d="M7 5h3v14H7zM14 5h3v14h-3z"/><path class="i-play" d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-camera" title="Switch camera (C / right click)" aria-label="Switch camera">
+            <svg viewBox="0 0 24 24"><path d="M4 7h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zm8 3a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-sound" title="Sound (M)" aria-label="Toggle sound">
+            <svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="i-wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="i-mute" d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-help" title="Controls (H)" aria-label="Controls">
+            <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm.1 14.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4zm1.4-5c-.7.4-.9.7-.9 1.4h-2c0-1.5.6-2.3 1.7-2.9.6-.4.9-.6.9-1.2 0-.6-.5-1-1.2-1s-1.3.4-1.4 1.2l-2-.2c.2-1.9 1.7-2.9 3.5-2.9 2 0 3.3 1.1 3.3 2.8 0 1.4-.8 2.1-1.9 2.8z"/></svg>
+          </button>
+          <button class="icon-btn danger" id="btn-end" title="End game" aria-label="End game">
+            <svg viewBox="0 0 24 24"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6 10.6 12 5 6.4z"/></svg>
+          </button>
+        </div>
+        <div class="panel wind hidden" id="hud-wind" title="Wind pushes the ball while it is in the air">
+          <svg viewBox="0 0 24 24" id="wind-arrow" aria-hidden="true"><path d="M12 2l6 9h-4v11h-4V11H6z"/></svg>
+          <div><div class="label">Wind</div><b id="wind-speed">0 km/h</b></div>
+        </div>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="panel meter curve-meter">
+          <div class="label">Curve <kbd>Q</kbd> <kbd>E</kbd></div>
+          <div class="curve-track"><div class="curve-center"></div><div class="curve-knob" id="curve-knob"></div></div>
+        </div>
+        <div class="panel meter power-meter">
+          <div class="label">Power <span id="power-value">0%</span></div>
+          <div class="power-track">
+            <div class="power-sweet" id="power-sweet"></div>
+            <div class="power-fill" id="power-fill"></div>
+            <div class="power-danger"></div>
+          </div>
+        </div>
+        <button class="panel powerup empty" id="btn-powerup" title="Use power-up (F)">
+          <span class="pu-icon" id="pu-icon">·</span>
+          <span class="pu-text"><span class="label">Power-up <kbd>F</kbd></span><b id="pu-name">Score 3 in a row</b></span>
+        </button>
+      </div>
+      <div class="hint" id="hud-hint">Aim with the mouse or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · hold <kbd>Click</kbd> / <kbd>Space</kbd> to power up, release to shoot</div>
+    </div>
+
+    <div id="banner" aria-live="polite">
+      <div class="banner-title"></div>
+      <div class="banner-sub"></div>
+    </div>
+    <div id="toast"></div>
+    <div id="flash"></div>
+    <div id="replay-overlay" class="hidden">
+      <div class="bar top"></div>
+      <div class="bar bottom"></div>
+      <div class="replay-label"><i></i>Replay</div>
+      <div class="replay-skip">Click or <kbd>Space</kbd> to skip</div>
+    </div>
+    <div id="achievement-stack" aria-live="polite"></div>
+
+    <!-- Main menu (python STATE_MENU) -->
+    <section id="screen-menu" class="screen">
+      <div class="menu-card">
+        <div class="eyebrow">Free kick challenge</div>
+        <h1 class="title">Football <span>Mania</span></h1>
+        <p class="lead">Bend it round the wall, beat the keeper and pick out the top corners.</p>
+        <div class="actions">
+          <button class="btn primary" id="btn-play">Play</button>
+          <button class="btn ghost" id="btn-menu-help">How to play</button>
+          <button class="btn ghost" id="btn-trophies">Trophies <span class="count" id="trophy-count">0/0</span></button>
+        </div>
+        <div class="zones-legend">
+          <span><i class="dot gold"></i>Top corners · 9</span>
+          <span><i class="dot blue"></i>Bottom corners · 5</span>
+          <span><i class="dot white"></i>Anywhere else · 3</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mode select (python STATE_MODE_SELECT) -->
+    <section id="screen-modes" class="screen hidden">
+      <div class="modes-wrap">
+        <h2 class="screen-title">Choose a mode</h2>
+        <div class="mode-grid" id="mode-grid"></div>
+        <button class="btn ghost small" id="btn-modes-back">Back</button>
+      </div>
+    </section>
+
+    <section id="screen-pause" class="screen hidden">
+      <div class="dialog">
+        <h2 class="screen-title">Paused</h2>
+        <div class="actions vertical">
+          <button class="btn primary" id="btn-resume">Resume</button>
+          <button class="btn ghost" id="btn-restart-pause">Restart</button>
+          <button class="btn ghost" id="btn-quit">Main menu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game over (python STATE_GAME_OVER) -->
+    <section id="screen-over" class="screen hidden">
+      <div class="dialog">
+        <div class="eyebrow" id="over-mode"></div>
+        <h2 class="screen-title">Game over</h2>
+        <div class="final-score"><span id="over-score">0</span><small>points</small></div>
+        <div class="new-best hidden" id="over-newbest">New best!</div>
+        <div class="over-daily hidden" id="over-daily"></div>
+        <div class="stats">
+          <div><b id="over-goals">0</b><span>Goals</span></div>
+          <div><b id="over-acc">0%</b><span>Accuracy</span></div>
+          <div><b id="over-streak">0</b><span>Best streak</span></div>
+          <div><b id="over-best">0</b><span>Best</span></div>
+        </div>
+        <div class="over-unlocks hidden" id="over-unlocks"></div>
+        <div class="actions">
+          <button class="btn primary" id="btn-restart">Play again</button>
+          <button class="btn ghost" id="btn-over-menu">Main menu</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-trophies" class="screen hidden">
+      <div class="dialog wide trophies">
+        <h2 class="screen-title">Trophy room</h2>
+        <div class="trophy-section">
+          <div class="label">Achievements <span id="ach-count"></span></div>
+          <div class="ach-grid" id="ach-grid"></div>
+        </div>
+        <div class="trophy-section">
+          <div class="label">Sticker album <span id="sticker-count"></span></div>
+          <p class="hint-text">Golden stars sometimes appear inside the goal. Put the ball through one to collect a sticker.</p>
+          <div class="sticker-grid" id="sticker-grid"></div>
+        </div>
+        <button class="btn primary" id="btn-trophies-close">Back</button>
+      </div>
+    </section>
+
+    <section id="screen-help" class="screen hidden">
+      <div class="dialog wide">
+        <h2 class="screen-title">How to play</h2>
+        <div class="help-grid">
+          <div><kbd>Mouse</kbd> / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div><div>Move the target marker</div>
+          <div>Hold <kbd>Left click</kbd> / <kbd>Space</kbd></div><div>Charge power, release to shoot</div>
+          <div><kbd>Q</kbd> <kbd>E</kbd> / <kbd>Wheel</kbd></div><div>Curve the ball left / right</div>
+          <div><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></div><div>Rotate the camera</div>
+          <div><kbd>Right click</kbd> / <kbd>C</kbd></div><div>Switch point of view</div>
+          <div><kbd>P</kbd> / <kbd>Esc</kbd></div><div>Pause / resume</div>
+          <div><kbd>F</kbd></div><div>Use your power-up</div>
+          <div><kbd>M</kbd></div><div>Mute sound</div>
+          <div><kbd>Gamepad</kbd></div><div>Left stick aim · RT/A shoot · LB/RB curve · X power-up</div>
+        </div>
+        <ul class="tips">
+          <li><b>Perfect Strike:</b> release inside the green band on the power bar for a shot with no scatter that the keeper reads later.</li>
+          <li><b>Low power</b> lobs over the wall but gives the keeper time; <b>high power</b> is hard to save, but above the red line accuracy drops.</li>
+          <li><b>Curve</b> bends the ball around the wall and still lands on your marker. <b>Wind</b> pushes it while it's in the air.</li>
+          <li><b>Streaks</b> multiply points (×1.5 from 3 in a row, ×2 from 5) and earn <b>power-ups</b>.</li>
+          <li>Every 5 goals a <b>boss keeper</b> steps in. Beat them for a bonus and a power-up.</li>
+          <li>Three misses and it's game over. Hitting the post won't save you.</li>
+        </ul>
+        <button class="btn primary" id="btn-help-close">Got it</button>
+      </div>
+    </section>
+
+    <div id="fatal" class="screen hidden">
+      <div class="dialog">
+        <h2 class="screen-title">Can't start the game</h2>
+        <p id="fatal-msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
