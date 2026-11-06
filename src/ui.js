@@ -33,39 +33,60 @@ function countUp(el, to, dur = 900) {
   requestAnimationFrame(tick);
 }
 
-// Visual identity for each mode card on the Choose a Mode screen.
+// Visual identity for each mode tile on the Choose a Mode screen: a level (1-4) for the
+// difficulty bars, a one-line objective, rule tags and a full-bleed poster illustration.
 const MODE_LOOK = {
   [MODE.DAILY]: {
     theme: 'daily',
-    diff: 'Expert',
-    objective: 'Ten fixed kicks, the same for everyone today.',
-    rules: ['Wind on every kick', 'Two boss keepers', 'No miss limit'],
-    icon: '<svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v5M16 3v5"/><path d="M8 15l2.5 2.2L16 13"/></svg>',
-    art: `<svg viewBox="0 0 120 120"><rect x="18" y="26" width="84" height="76" rx="10"/><path d="M18 46h84M40 16v18M80 16v18"/><text x="60" y="88" text-anchor="middle">10</text></svg>`,
+    diff: 'Expert', level: 4,
+    objective: 'Ten fixed kicks. Same for everyone today.',
+    rules: ['Wind', '2 bosses', 'No miss limit'],
+    art: `<svg viewBox="0 0 300 360" aria-hidden="true">
+      <text x="240" y="200" text-anchor="end" class="a-big">10</text>
+      <g class="a-dots">${Array.from({ length: 10 }, (_, k) => `<circle cx="${300 - 14 - (k % 2) * 34}" cy="${20 + Math.floor(k / 2) * 34}" r="11" ${k < 3 ? 'class="on"' : ''}/>`).join('')}</g>
+    </svg>`,
   },
   [MODE.KEEPER_POWER]: {
     theme: 'keeper',
-    diff: 'Easy',
-    objective: 'Beat a keeper who grows with every goal.',
-    rules: ['Keeper +8% per goal', '3 misses and out', 'Boss every 5 goals'],
-    icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="2.5"/><path d="M12 9v7M12 10l-6-4M12 10l6-4M12 16l-3 5M12 16l3 5"/></svg>',
-    art: `<svg viewBox="0 0 120 120"><circle cx="60" cy="26" r="11"/><path d="M60 40v34M60 46 28 26M60 46l32-20M60 74 46 102M60 74l14 28" stroke-width="10"/><circle cx="24" cy="23" r="7"/><circle cx="96" cy="23" r="7"/></svg>`,
+    diff: 'Easy', level: 1,
+    objective: 'The keeper grows with every goal you score.',
+    rules: ['Keeper +8%', '3 lives', 'Bosses'],
+    art: `<svg viewBox="0 0 300 360" aria-hidden="true">
+      <g class="a-solid" transform="rotate(-18 170 190)">
+        <circle cx="170" cy="70" r="30"/>
+        <rect x="132" y="108" width="76" height="120" rx="26"/>
+        <rect x="58" y="96" width="92" height="30" rx="15" transform="rotate(-28 104 111)"/>
+        <rect x="190" y="96" width="92" height="30" rx="15" transform="rotate(28 236 111)"/>
+        <circle cx="62" cy="64" r="26" class="a-glove"/>
+        <circle cx="278" cy="64" r="26" class="a-glove"/>
+        <rect x="136" y="214" width="30" height="110" rx="15" transform="rotate(10 151 214)"/>
+        <rect x="176" y="214" width="30" height="110" rx="15" transform="rotate(-10 191 214)"/>
+      </g>
+    </svg>`,
   },
   [MODE.GOALPOST_REDUCTION]: {
     theme: 'goal',
-    diff: 'Medium',
+    diff: 'Medium', level: 2,
     objective: 'Keep scoring while the goal closes in.',
-    rules: ['Goal −40 per goal', '3 misses and out', 'Boss every 5 goals'],
-    icon: '<svg viewBox="0 0 24 24"><path d="M3 19V6h18v13"/><path d="M8 10l-2 2 2 2M16 10l2 2-2 2"/></svg>',
-    art: `<svg viewBox="0 0 120 120"><g class="shrink"><path d="M14 96V34h92v62" stroke-width="7"/><path d="M14 52h92M14 72h92M36 34v62M60 34v62M84 34v62" stroke-width="1.5" opacity=".5"/></g></svg>`,
+    rules: ['Goal −40', '3 lives', 'Bosses'],
+    art: `<svg viewBox="0 0 300 360" aria-hidden="true">
+      <g class="a-goal"><path class="a-frame" d="M40 300V110h220v190"/>
+        <path class="a-net" d="M40 150h220M40 190h220M40 230h220M40 270h220M80 110v190M120 110v190M160 110v190M200 110v190M240 110v190"/></g>
+      <path class="a-solid a-push l" d="M0 180l36 25-36 25z"/>
+      <path class="a-solid a-push r" d="M300 180l-36 25 36 25z"/>
+    </svg>`,
   },
   [MODE.TIME_REDUCTION]: {
     theme: 'time',
-    diff: 'Hard',
-    objective: 'Shoot before the shot clock runs out.',
-    rules: ['30 s per shot', '−3 s after every goal', 'Time out = a miss'],
-    icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.2"/><path d="M12 13.5 15 10M10 3h4M12 3v3"/></svg>',
-    art: `<svg viewBox="0 0 120 120"><circle cx="60" cy="66" r="40" opacity=".35"/><circle class="tick" cx="60" cy="66" r="40" pathLength="100"/><path d="M50 14h20M60 14v12"/><path class="hand" d="M60 66V38"/></svg>`,
+    diff: 'Hard', level: 3,
+    objective: 'Beat the shot clock. It shrinks every goal.',
+    rules: ['30 s', '−3 s per goal', '3 lives'],
+    art: `<svg viewBox="0 0 300 360" aria-hidden="true">
+      <circle cx="160" cy="190" r="110" class="a-track"/>
+      <circle cx="160" cy="190" r="110" class="a-ring" pathLength="100"/>
+      <rect x="140" y="52" width="40" height="22" rx="6" class="a-solid"/>
+      <text x="160" y="226" text-anchor="middle" class="a-mid">30</text>
+    </svg>`,
   },
 };
 
@@ -155,6 +176,15 @@ export class UI {
         this.show('modes');
       } else if (this.current === 'menu' && e.code === 'KeyH') {
         this.openHelp('menu');
+      } else if (this.current === 'modes' && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
+        e.preventDefault();
+        const step = e.code === 'ArrowLeft' || e.code === 'ArrowUp' ? -1 : 1;
+        const n = this.modeTiles.length;
+        const next = (this.modeIndex + step + n) % n;
+        this.selectMode(next); // don't rely on the focus event (it doesn't fire if the window isn't focused)
+        this.modeTiles[next].focus({ preventScroll: true });
+      } else if (this.current === 'modes' && e.code === 'Enter' && !e.target.closest?.('button')) {
+        this.modeTiles[this.modeIndex].click();
       } else if (e.code === 'Escape' && SUBSCREENS.includes(this.current)) {
         this.show('menu');
       } else if (e.code === 'Escape' && this.current === 'help' && this.helpReturn !== 'game') {
@@ -184,58 +214,55 @@ export class UI {
     });
 
     const grid = $('mode-grid');
-    // Daily Challenge first (featured): it changes every day.
+    // Daily Challenge first: it changes every day.
     const order = [MODE.DAILY, MODE.KEEPER_POWER, MODE.GOALPOST_REDUCTION, MODE.TIME_REDUCTION];
-    order.forEach((id, i) => {
+    this.modeTiles = order.map((id, i) => {
       const m = MODE_INFO[id];
       const look = MODE_LOOK[id];
-      const card = document.createElement('button');
-      card.className = `mode-card theme-${look.theme}${id === MODE.DAILY ? ' daily featured-mode' : ''}`;
-      card.style.setProperty('--i', i);
-      card.innerHTML = `
-        ${id === MODE.DAILY ? '<span class="ribbon"><i></i>Featured today</span>' : ''}
-        <div class="mc-art" aria-hidden="true">${look.art}</div>
-        <div class="mc-head">
-          <span class="mc-icon" aria-hidden="true">${look.icon}</span>
-          <span class="num">${id === MODE.DAILY ? `<span class="mc-date"></span>` : `Mode 0${i}`}</span>
-          <span class="diff d-${look.diff.toLowerCase()}">${look.diff}</span>
-        </div>
-        <h3>${m.name}</h3>
-        <p class="objective">${look.objective}</p>
-        <ul class="rules">${look.rules.map((r) => `<li>${r}</li>`).join('')}</ul>
-        ${id === MODE.DAILY ? `<div class="daily-strip">
-          <span><small>Refreshes in</small><b class="countdown">--:--:--</b></span>
-          <span><small>Streak</small><b id="daily-streak">0</b></span>
-          <span><small>Reward</small><b class="daily-reward">+25 XP</b></span>
-        </div>` : ''}
-        <div class="mc-stats">
-          <div><small>${id === MODE.DAILY ? "Today's best" : 'Best'}</small><b data-best="${m.id}">0</b></div>
-          <div><small>Best combo</small><b data-combo="${m.id}">×0</b></div>
-          <div class="mc-comp"><small>${id === MODE.DAILY ? 'Today' : 'Played'}</small><b data-comp="${m.id}">0</b></div>
-        </div>
-        <div class="mc-foot">
-          <span class="xp-chip"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>30–90 XP per goal</span>
-          <span class="mc-play">Play<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </div>`;
-      card.addEventListener('click', () => {
-        card.blur();
+      const daily = id === MODE.DAILY;
+      const bars = [1, 2, 3, 4].map((n) => `<i${n <= look.level ? ' class="on"' : ''}></i>`).join('');
+      const tile = document.createElement('button');
+      tile.className = `mode-tile theme-${look.theme}${i === 0 ? ' is-active' : ''}`;
+      tile.style.setProperty('--i', i);
+      tile.setAttribute('aria-label', `${m.name}. ${look.objective}`);
+      tile.innerHTML = `
+        <span class="mt-shape">
+          <span class="mt-bg"></span>
+          <span class="mt-art">${look.art}</span>
+          <span class="mt-num">0${i + 1}</span>
+          <span class="mt-top">
+            ${daily
+              ? '<span class="live"><i></i>Live</span><span class="mt-reset">Resets <b class="countdown">--:--:--</b></span>'
+              : `<span class="bars" title="Difficulty: ${look.diff}">${bars}</span><span class="mt-diff">${look.diff}</span>`}
+          </span>
+          <span class="mt-body">
+            <span class="mt-kicker">${daily ? '<span class="mc-date"></span>' : `Mode 0${i}`}</span>
+            <span class="mt-title">${m.name}</span>
+            <span class="mt-detail">
+              <span class="mt-obj">${look.objective}</span>
+              <span class="mt-tags">${look.rules.map((r) => `<span>${r}</span>`).join('')}</span>
+              <span class="mt-stats">
+                <span><small>${daily ? 'Today' : 'Best'}</small><b data-best="${m.id}">0</b></span>
+                <span><small>Combo</small><b data-combo="${m.id}">×0</b></span>
+                ${daily
+                  ? `<span><small>Streak</small><b id="daily-streak">0</b></span><span><small>Kicks</small><b data-comp="${m.id}">0 / 10</b></span>`
+                  : `<span><small>Played</small><b data-comp="${m.id}">0</b></span>`}
+              </span>
+              <span class="mt-cta"><span class="mt-play">Play</span><kbd class="key sm">Enter</kbd></span>
+            </span>
+          </span>
+        </span>`;
+      tile.addEventListener('click', () => {
+        tile.blur();
         handlers.onClick?.();
         handlers.onSelectMode(m.id);
       });
-      // Subtle 3D tilt towards the pointer.
-      card.addEventListener('pointermove', (e) => {
-        if (e.pointerType !== 'mouse' || reduceMotion()) return;
-        const r = card.getBoundingClientRect();
-        card.style.setProperty('--ry', `${((e.clientX - r.left) / r.width - 0.5) * 7}deg`);
-        card.style.setProperty('--rx', `${-((e.clientY - r.top) / r.height - 0.5) * 6}deg`);
-        card.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`);
-      });
-      card.addEventListener('pointerleave', () => {
-        card.style.setProperty('--rx', '0deg');
-        card.style.setProperty('--ry', '0deg');
-      });
-      grid.appendChild(card);
+      tile.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') this.selectMode(i); });
+      tile.addEventListener('focus', () => this.selectMode(i));
+      grid.appendChild(tile);
+      return tile;
     });
+    this.modeIndex = 0;
     this.buildMotes('mode-motes', 18);
 
     this.misses = $('hud-misses');
@@ -297,6 +324,13 @@ export class UI {
     } else {
       this.show('modes');
     }
+  }
+
+  /** Focus one mode tile: it expands and shows its details. */
+  selectMode(i) {
+    if (i === this.modeIndex && this.modeTiles[i].classList.contains('is-active')) return;
+    this.modeIndex = i;
+    this.modeTiles.forEach((t, k) => t.classList.toggle('is-active', k === i));
   }
 
   setMissesVisible(visible) {
@@ -389,10 +423,8 @@ export class UI {
     document.querySelectorAll('[data-comp]').forEach((el) => {
       const id = Number(el.dataset.comp);
       el.textContent = id === MODE.DAILY ? (progress.dailyDoneToday ? 'Done' : '0 / 10') : progress.modeStats(id).games;
-      el.closest('.mc-comp').classList.toggle('done', id === MODE.DAILY && progress.dailyDoneToday);
+      el.parentElement.classList.toggle('done', id === MODE.DAILY && progress.dailyDoneToday);
     });
-    const reward = document.querySelector('.daily-reward');
-    if (reward) reward.textContent = progress.has('daily') ? '+25 XP' : 'Trophy';
   }
 
   /** Live "refreshes in" countdown on the Daily card while the mode screen is up. */
@@ -404,7 +436,7 @@ export class UI {
     const cd = document.querySelector('.countdown');
     if (cd) cd.textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
     const date = document.querySelector('.mc-date');
-    if (date) date.textContent = now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    if (date) date.textContent = `Daily · ${now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}`;
   }
 
   setTrophyCount(unlocked, total) {

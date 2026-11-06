@@ -131,7 +131,7 @@
       <div class="menu-shade" aria-hidden="true"></div>
 
       <header class="menu-top">
-        <button class="profile-chip reveal" id="btn-profile" style="--d: 0.55s" aria-label="Open career">
+        <button class="profile-chip reveal" id="btn-profile" style="--d: 0.55s" aria-label="Open player card">
           <span class="lvl-ring" id="profile-ring"><b id="profile-level">1</b></span>
           <span class="profile-text"><b>Player One</b><small id="profile-rank">Rookie</small></span>
         </button>
@@ -154,8 +154,8 @@
 
           <div class="nav-list">
             <button class="nav-item reveal" id="btn-career" style="--d: 0.38s">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg>
-              <span>Career</span><em id="meta-career">Lv 1</em>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="11" r="2.3"/><path d="M5.8 16.2a3.4 3.4 0 0 1 6.4 0M14.5 10h4M14.5 13.5h3"/></svg>
+              <span>Player Card</span><em id="meta-career">Lv 1</em>
             </button>
             <button class="nav-item reveal" id="btn-daily" style="--d: 0.42s">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3v5M16 3v5"/><path d="M8.5 14h2M13.5 14h2M8.5 17h2"/></svg>
@@ -183,6 +183,7 @@
           </div>
           <p class="install-hint hidden" id="install-hint">On iPhone or iPad: tap <b>Share</b>, then <b>Add to Home Screen</b> to install.</p>
         </nav>
+        <footer class="menu-foot reveal" style="--d: 0.9s"><span><kbd class="key sm">Enter</kbd> Play</span><span><kbd class="key sm">H</kbd> How to play</span></footer>
       </div>
 
       <div class="stat-strip" aria-label="Your stats">
@@ -215,22 +216,26 @@
         </div>
       </div>
 
-      <footer class="menu-foot reveal" style="--d: 0.9s"><span><kbd class="key sm">Enter</kbd> Play</span><span><kbd class="key sm">H</kbd> How to play</span></footer>
     </section>
 
     <!-- Mode select (python STATE_MODE_SELECT) -->
     <section id="screen-modes" class="screen hub hidden">
       <div class="hub-fx" aria-hidden="true"><i class="sweep a"></i><i class="sweep b"></i><i class="ray"></i><div class="motes" id="mode-motes"></div></div>
       <div class="hub-wrap modes-wrap">
-        <header class="hub-header modes-header">
-          <button class="back-btn" id="btn-modes-back" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span>Back</span></button>
-          <div>
-            <div class="eyebrow">Play</div>
+        <header class="modes-header">
+          <button class="back-btn" id="btn-modes-back" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+          <div class="modes-heading">
+            <div class="eyebrow">Play <i>/</i> Mode select</div>
             <h2 class="hub-title">Choose your challenge</h2>
-            <p class="hub-sub">Select a mode and prove your free-kick mastery.</p>
           </div>
+          <p class="hub-sub">Select a mode and prove your free-kick mastery.</p>
         </header>
         <div class="mode-grid" id="mode-grid"></div>
+        <footer class="mode-hints" aria-hidden="true">
+          <span><kbd class="key sm">←</kbd><kbd class="key sm">→</kbd>Browse</span>
+          <span><kbd class="key sm">Enter</kbd>Play</span>
+          <span><kbd class="key sm">Esc</kbd>Back</span>
+        </footer>
       </div>
     </section>
 
@@ -267,10 +272,10 @@
       </div>
     </section>
 
-    <!-- Career -->
+    <!-- Player card -->
     <section id="screen-career" class="screen hidden">
       <div class="dialog wide career">
-        <div class="eyebrow">Career</div>
+        <div class="eyebrow">Player card</div>
         <h2 class="screen-title sm">Your journey</h2>
         <div class="career-head">
           <div class="big-ring" id="career-ring"><b id="career-level">1</b><small>Level</small></div>
