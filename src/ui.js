@@ -1,5 +1,5 @@
 import { MODE, MODE_INFO, RULES } from './config.js';
-import { ACHIEVEMENTS, STICKERS } from './progress.js';
+import { ACHIEVEMENTS, STICKERS, levelFor } from './progress.js';
 import { RARITY, CATEGORY, TROPHY_META, trophyProgress, badgeSvg, LOCK_SVG } from './trophies.js';
 
 const $ = (id) => document.getElementById(id);
@@ -190,6 +190,10 @@ export class UI {
         this.modeTiles[next].focus({ preventScroll: true });
       } else if (this.current === 'modes' && e.code === 'Enter' && !e.target.closest?.('button')) {
         this.modeTiles[this.modeIndex].click();
+      } else if (this.current === 'over' && e.code === 'Enter' && !e.target.closest?.('button')) {
+        $('btn-restart').click();
+      } else if (this.current === 'over' && e.code === 'Escape') {
+        $('btn-over-menu').click();
       } else if (e.code === 'Escape' && SUBSCREENS.includes(this.current)) {
         this.show('menu');
       } else if (e.code === 'Escape' && this.current === 'help' && this.helpReturn !== 'game') {
@@ -203,6 +207,7 @@ export class UI {
     on('btn-quit', () => handlers.onMenu());
     on('btn-restart', () => handlers.onRestart());
     on('btn-over-menu', () => handlers.onMenu());
+    on('btn-over-modes', () => { handlers.onMenu(); this.show('modes'); });
     on('btn-help-close', () => this.closeHelp());
     on('btn-pause', () => handlers.onTogglePause());
     on('btn-camera', () => handlers.onToggleCamera());
@@ -823,24 +828,55 @@ export class UI {
     }
   }
 
-  showGameOver({ modeName, score, best, newBest, goals, shots, streak, dailyText, unlocks }) {
+  /** Post-match results: grade, score, run stats, XP earned and this run's unlocks. */
+  showGameOver({ modeName, score, best, newBest, goals, shots, streak, dailyText, unlocks, xpStart = 0, xpEnd = 0, isDaily = false }) {
     $('over-mode').textContent = modeName;
-    $('over-score').textContent = score;
-    $('over-best').textContent = best;
-    $('over-goals').textContent = goals;
-    $('over-acc').textContent = shots ? `${Math.round((goals / shots) * 100)}%` : '0%';
-    $('over-streak').textContent = streak;
+
+    // Grade the run on points (the Daily has only 10 kicks, so its bar is lower).
+    const cut = isDaily ? [70, 45, 25, 10] : [100, 50, 25, 10];
+    const grade = ['S', 'A', 'B', 'C'][cut.findIndex((c) => score >= c)] ?? 'D';
+    const g = $('over-grade');
+    g.className = `grade g-${grade.toLowerCase()}`;
+    g.querySelector('span').textContent = grade;
+
+    countUp($('over-score'), score, 1100);
     $('over-newbest').classList.toggle('hidden', !newBest);
+    const bestline = $('over-bestline');
+    bestline.classList.toggle('hidden', !!newBest);
+    // Rebuilt each time (never patched), so the line can't lose its parts between games.
+    const diff = score - best;
+    bestline.innerHTML = best > 0 && diff < 0
+      ? `<b>${-diff}</b> short of your best <b>${best}</b>`
+      : `Best <b>${best}</b>`;
+
+    $('over-goals').textContent = goals;
+    $('over-shots').textContent = shots;
+    $('over-acc').textContent = shots ? `${Math.round((goals / shots) * 100)}%` : '0%';
+    $('over-streak').textContent = `×${streak}`;
+
+    // XP: the bar starts where this run began and fills to where it ended.
+    const before = levelFor(xpStart), after = levelFor(xpEnd);
+    const levelled = after.level > before.level;
+    $('over-xp').textContent = `+${Math.max(0, xpEnd - xpStart)}`;
+    $('over-level').textContent = `Level ${after.level}`;
+    $('over-levelup').classList.toggle('hidden', !levelled);
+    $('over-xp-next').textContent = `${after.xp} / ${after.next} XP`;
+    const oldPct = levelled ? 0 : (before.xp / after.next) * 100;
+    const newPct = (after.xp / after.next) * 100;
+    $('over-xp-old').style.width = `${oldPct}%`;
+    const gain = $('over-xp-new');
+    gain.style.left = `${oldPct}%`;
+    gain.style.width = '0%';
+    requestAnimationFrame(() => requestAnimationFrame(() => { gain.style.width = `${Math.max(0, newPct - oldPct)}%`; }));
+
     $('over-daily').classList.toggle('hidden', !dailyText);
     $('over-daily').textContent = dailyText || '';
-    const list = $('over-unlocks');
-    list.innerHTML = '';
-    list.classList.toggle('hidden', !unlocks.length);
-    for (const u of unlocks) {
-      const s = document.createElement('span');
-      s.textContent = `${u.icon} ${u.name}`;
-      list.appendChild(s);
-    }
+
+    // Unlocks as mini medals
+    $('over-unlocks-wrap').classList.toggle('hidden', !unlocks.length);
+    $('over-unlocks').innerHTML = unlocks.map((u) =>
+      `<span class="res-medal" title="${esc(u.desc ?? '')}">${badgeSvg(u.id)}<b>${esc(u.name)}</b></span>`).join('');
+
     this.show('over');
   }
 

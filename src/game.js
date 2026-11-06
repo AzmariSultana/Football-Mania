@@ -253,6 +253,7 @@ export class Game {
     this.ui.setMode(MODE_INFO[mode].name);
     this.stadium.cycleTime = 0;
     this.runStart = this.time;
+    this.xpAtStart = this.progress.career.totalXp; // for the results screen's "XP earned"
     this.applySettings('camera'); // every run starts from the chosen point of view
     this.resetRun();
     this.audio.unlock();
@@ -534,6 +535,9 @@ export class Game {
       streak: this.bestStreak,
       dailyText,
       unlocks: this.stats.unlocks,
+      xpStart: this.xpAtStart ?? this.progress.career.totalXp,
+      xpEnd: this.progress.career.totalXp,
+      isDaily: this.isDaily,
     });
     this.audio.whistle(true);
     this.audio.setWind(0);

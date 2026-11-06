@@ -252,31 +252,63 @@
 
     <!-- Game over (python STATE_GAME_OVER) -->
     <section id="screen-over" class="screen hidden">
-      <div class="dialog">
-        <div class="eyebrow" id="over-mode"></div>
-        <h2 class="screen-title">Game over</h2>
-        <div class="final-score"><span id="over-score">0</span><small>points</small></div>
-        <div class="new-best hidden" id="over-newbest">New best!</div>
-        <div class="over-daily hidden" id="over-daily"></div>
-        <div class="stats">
-          <div><b id="over-goals">0</b><span>Goals</span></div>
-          <div><b id="over-acc">0%</b><span>Accuracy</span></div>
-          <div><b id="over-streak">0</b><span>Best streak</span></div>
-          <div><b id="over-best">0</b><span>Best</span></div>
+      <div class="results" id="results">
+        <header class="res-head">
+          <span class="res-tag">Full time</span>
+          <span class="res-mode" id="over-mode"></span>
+        </header>
+
+        <div class="res-body">
+          <div class="res-score">
+            <div class="grade" id="over-grade" title="Run grade"><span>B</span><small>Grade</small></div>
+            <div class="res-points">
+              <small>Points</small>
+              <b id="over-score">0</b>
+              <div class="res-best">
+                <span class="new-best hidden" id="over-newbest">New best</span>
+                <span id="over-bestline">Best <b>0</b></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="res-side">
+            <div class="res-stats">
+              <div><b id="over-goals">0</b><span>Goals</span></div>
+              <div><b id="over-shots">0</b><span>Shots</span></div>
+              <div><b id="over-acc">0%</b><span>Accuracy</span></div>
+              <div><b id="over-streak">0</b><span>Best streak</span></div>
+            </div>
+            <div class="res-xp">
+              <div class="res-xp-top"><span>XP earned</span><b id="over-xp">+0</b></div>
+              <div class="res-xp-bar"><i class="old" id="over-xp-old"></i><i class="gain" id="over-xp-new"></i></div>
+              <div class="res-xp-foot"><span id="over-level">Level 1</span><span class="level-up hidden" id="over-levelup">Level up</span><span id="over-xp-next">0 / 200 XP</span></div>
+            </div>
+            <div class="over-daily hidden" id="over-daily"></div>
+            <div class="res-unlocks hidden" id="over-unlocks-wrap">
+              <span class="res-unlocks-label">Unlocked this run</span>
+              <div class="over-unlocks" id="over-unlocks"></div>
+            </div>
+          </div>
         </div>
-        <div class="over-unlocks hidden" id="over-unlocks"></div>
-        <div class="actions">
-          <button class="btn primary" id="btn-restart">Play again</button>
-          <button class="btn ghost" id="btn-over-menu">Main menu</button>
-        </div>
+
+        <footer class="res-actions">
+          <button class="res-btn primary" id="btn-restart"><span>Play again</span><kbd class="key sm">Enter</kbd></button>
+          <button class="res-btn" id="btn-over-modes"><span>Change mode</span></button>
+          <button class="res-btn" id="btn-over-menu"><span>Main menu</span><kbd class="key sm">Esc</kbd></button>
+        </footer>
       </div>
     </section>
 
     <!-- Player card -->
     <section id="screen-career" class="screen hidden">
       <div class="dialog wide career">
-        <div class="eyebrow">Player card</div>
-        <h2 class="screen-title sm">Your journey</h2>
+        <header class="career-header">
+          <button class="back-btn" id="btn-career-close" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+          <div>
+            <div class="eyebrow">Player card</div>
+            <h2 class="screen-title sm">Your journey</h2>
+          </div>
+        </header>
         <div class="career-head">
           <div class="big-ring" id="career-ring"><b id="career-level">1</b><small>Level</small></div>
           <div class="career-rank">
@@ -288,7 +320,6 @@
         <div class="career-grid" id="career-grid"></div>
         <div class="label section-label">Mode records</div>
         <div class="records" id="career-records"></div>
-        <button class="btn primary" id="btn-career-close">Back</button>
       </div>
     </section>
 
