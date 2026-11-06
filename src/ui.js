@@ -6,11 +6,8 @@ const $ = (id) => document.getElementById(id);
 const SCREENS = ['menu', 'modes', 'pause', 'over', 'help', 'trophies', 'career', 'settings'];
 const SUBSCREENS = ['modes', 'trophies', 'career', 'settings'];
 const MODE_SHORT = ['Goalkeeper Power', 'Goalpost Reduction', 'Time Reduction', 'Daily Challenge', 'Practice'];
-const FILTERS = [
-  ['all', 'All'], ['unlocked', 'Unlocked'], ['locked', 'Locked'],
-  ['common', 'Common'], ['rare', 'Rare'], ['epic', 'Epic'], ['legendary', 'Legendary'],
-  ['gameplay', 'Gameplay'], ['skill', 'Skill'], ['challenges', 'Challenges'], ['hidden', 'Hidden'],
-];
+// Trophy cabinet shelves, in display order.
+const SHELVES = ['skill', 'gameplay', 'challenges', 'hidden'];
 const COMPLETION_RANKS = [[0, 'Amateur'], [25, 'Semi-pro'], [50, 'Professional'], [75, 'World Class'], [100, 'Hall of Fame']];
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -141,30 +138,38 @@ export class UI {
       });
     });
 
-    // Trophy Room filters, search and sort
-    this.trophyFilter = 'all';
-    const filters = $('ach-filters');
-    for (const [id, label] of FILTERS) {
-      const b = document.createElement('button');
-      b.className = `chip-tab${id === 'all' ? ' active' : ''}${RARITY[id] ? ` r-${id}` : ''}`;
-      b.dataset.filter = id;
-      b.setAttribute('role', 'tab');
-      b.textContent = label;
-      filters.appendChild(b);
-    }
-    filters.addEventListener('click', (e) => {
-      const b = e.target.closest('.chip-tab');
+    // Trophy Room: category tabs, status switch, rarity / sort menus, search
+    this.trophyCat = 'all';
+    this.trophyStatus = 'all';
+    $('ach-filters').addEventListener('click', (e) => {
+      const b = e.target.closest('.cat-tab');
       if (!b) return;
       e.stopPropagation();
       handlers.onClick?.();
-      this.trophyFilter = b.dataset.filter;
-      filters.querySelectorAll('.chip-tab').forEach((x) => x.classList.toggle('active', x === b));
+      this.trophyCat = b.dataset.cat;
       this.renderAchievements();
     });
+    $('ach-status').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      e.stopPropagation();
+      b.blur();
+      handlers.onClick?.();
+      this.trophyStatus = b.dataset.status;
+      $('ach-status').querySelectorAll('button').forEach((x) => x.classList.toggle('active', x === b));
+      this.renderAchievements();
+    });
+    $('ach-grid').addEventListener('click', (e) => {
+      const tile = e.target.closest('.medal');
+      if (!tile) return;
+      e.stopPropagation();
+      handlers.onClick?.();
+      this.inspect(tile.dataset.id, true);
+    });
     $('ach-search').addEventListener('input', () => this.renderAchievements());
-    $('ach-sort').addEventListener('change', () => this.renderAchievements());
+    for (const id of ['ach-sort', 'ach-rarity']) $(id).addEventListener('change', () => this.renderAchievements());
     // Typing in the search box must not trigger game shortcuts.
-    for (const el of [$('ach-search'), $('ach-sort')]) {
+    for (const el of [$('ach-search'), $('ach-sort'), $('ach-rarity')]) {
       for (const type of ['keydown', 'keyup']) el.addEventListener(type, (e) => e.stopPropagation());
     }
 
@@ -641,67 +646,45 @@ export class UI {
       };
     });
 
-    // Completion summary
+    // Summary bar
     const total = this.trophies.length;
     const unlocked = this.trophies.filter((t) => t.owned).length;
     const pct = Math.round((unlocked / total) * 100);
     $('comp-pct').textContent = `${pct}%`;
     $('ach-count').textContent = unlocked;
-    $('ach-total').textContent = `/ ${total} unlocked`;
+    $('ach-total').textContent = `/ ${total}`;
     const rank = [...COMPLETION_RANKS].reverse().find(([min]) => pct >= min);
     const next = COMPLETION_RANKS.find(([min]) => min > pct);
     $('comp-rank').textContent = rank[1];
     $('comp-next').innerHTML = next
-      ? `<b>${Math.ceil((next[0] / 100) * total) - unlocked}</b> more to reach <b>${next[1]}</b>`
-      : 'Every achievement unlocked. Legendary.';
+      ? `<b>${Math.ceil((next[0] / 100) * total) - unlocked}</b> more to <b>${next[1]}</b>`
+      : 'Every achievement unlocked';
     $('comp-ring').style.setProperty('--p', 0);
     requestAnimationFrame(() => requestAnimationFrame(() => setRing($('comp-ring'), unlocked / total)));
     $('rarity-split').innerHTML = Object.entries(RARITY).map(([id, r]) => {
       const all = this.trophies.filter((t) => t.rarity === id);
-      return `<span class="r-${id}"><i></i>${r.label} <b>${all.filter((t) => t.owned).length}/${all.length}</b></span>`;
+      return `<span class="r-${id}"><i></i><em>${r.label}</em><b>${all.filter((t) => t.owned).length}/${all.length}</b></span>`;
     }).join('');
+    const stats = [
+      ['Goals', c.goals], ['Best streak', `×${c.bestStreak}`], ['Perfect strikes', c.perfects],
+      ['Bosses beaten', progress.bossCount], ['Play time', fmtTime(c.seconds)],
+      ['Accuracy', `${c.accuracy}%`], ['High score', progress.bestScore.score],
+    ];
+    $('trophy-stats').innerHTML = stats.map(([k, v]) => `<div><b>${esc(v)}</b><span>${k}</span></div>`).join('');
 
-    // Featured: latest unlock, or the closest locked one
+    // Reset filters each visit; open the detail panel on the latest unlock (or the closest one)
+    this.trophyCat = 'all';
+    this.trophyStatus = 'all';
+    $('ach-search').value = '';
+    $('ach-sort').value = 'default';
+    $('ach-rarity').value = 'all';
+    $('ach-status').querySelectorAll('button').forEach((x) => x.classList.toggle('active', x.dataset.status === 'all'));
     const latest = this.trophies.filter((t) => t.owned).sort((a, b) => (b.at ?? 0) - (a.at ?? 0))[0];
     const closest = this.trophies.filter((t) => !t.owned && !t.hidden)
       .sort((a, b) => (b.prog?.ratio ?? 0) - (a.prog?.ratio ?? 0) || RARITY[a.rarity].rank - RARITY[b.rarity].rank)[0];
-    const f = latest ?? closest;
-    const fe = $('featured');
-    if (f) {
-      fe.className = `featured glass r-${f.rarity}${f.owned ? ' owned' : ''}${f.isNew ? ' is-new' : ''}`;
-      fe.innerHTML = `
-        <div class="feat-badge">${badgeSvg(f.id, { locked: !f.owned })}</div>
-        <div class="feat-body">
-          <div class="label">${f.owned ? (f.isNew ? 'New unlock' : 'Latest unlock') : 'Next up'}</div>
-          <h3>${esc(f.name)}</h3>
-          <p>${esc(f.desc)}</p>
-          <div class="feat-meta">
-            <span class="rarity r-${f.rarity}">${RARITY[f.rarity].label}</span>
-            <span class="xp">+${RARITY[f.rarity].xp} XP</span>
-            ${f.owned && f.at ? `<span class="date">${fmtDate(f.at)}</span>` : ''}
-          </div>
-          ${!f.owned && f.prog ? `<div class="prog"><div class="stat-bar"><i style="--w:${f.prog.ratio * 100}%"></i></div><small>${f.prog.value} / ${f.prog.target}</small></div>` : ''}
-        </div>`;
-    } else {
-      fe.className = 'featured glass';
-      fe.innerHTML = '';
-    }
-
-    // Player stats
-    const stats = [
-      ['Total goals', c.goals], ['Best streak', `×${c.bestStreak}`], ['Perfect strikes', c.perfects],
-      ['Bosses beaten', progress.bossCount], ['Play time', fmtTime(c.seconds)],
-      ['Accuracy', `${c.accuracy}%`], ['Highest score', progress.bestScore.score],
-    ];
-    $('trophy-stats').innerHTML = stats.map(([k, v], i) =>
-      `<div class="t-stat glass" style="--i:${i}"><b>${esc(v)}</b><span>${k}</span></div>`).join('');
-
-    // Reset filters each visit
-    this.trophyFilter = 'all';
-    $('ach-search').value = '';
-    $('ach-sort').value = 'default';
-    $('ach-filters').querySelectorAll('.chip-tab').forEach((x) => x.classList.toggle('active', x.dataset.filter === 'all'));
+    this.selectedTrophy = (latest ?? closest ?? this.trophies[0]).id;
     this.renderAchievements();
+    this.inspect(this.selectedTrophy);
 
     // Sticker album
     const album = $('sticker-grid');
@@ -723,50 +706,106 @@ export class UI {
     progress.markTrophiesSeen();
   }
 
+  /** Category tabs, then the shelves of medals that pass the filters. */
   renderAchievements() {
     if (!this.trophies) return;
     const q = $('ach-search').value.trim().toLowerCase();
-    const f = this.trophyFilter;
-    const list = this.trophies.filter((t) => {
-      if (f === 'unlocked' && !t.owned) return false;
-      if (f === 'locked' && t.owned) return false;
-      if (RARITY[f] && t.rarity !== f) return false;
-      if (CATEGORY[f] && t.category !== f) return false;
+    const rarity = $('ach-rarity').value;
+    const status = this.trophyStatus;
+    const pass = (t) => {
+      if (status === 'unlocked' && !t.owned) return false;
+      if (status === 'locked' && t.owned) return false;
+      if (rarity !== 'all' && t.rarity !== rarity) return false;
       if (q) {
         const text = t.hidden ? 'secret hidden' : `${t.name} ${t.desc} ${t.rarity} ${t.category}`;
         if (!text.toLowerCase().includes(q)) return false;
       }
       return true;
-    });
-    const sort = $('ach-sort').value;
-    if (sort === 'recent') list.sort((a, b) => (b.at ?? 0) - (a.at ?? 0) || a.index - b.index);
-    else if (sort === 'rarity') list.sort((a, b) => RARITY[b.rarity].rank - RARITY[a.rarity].rank || a.index - b.index);
-    else if (sort === 'progress') list.sort((a, b) => Number(a.owned) - Number(b.owned) || (b.prog?.ratio ?? 0) - (a.prog?.ratio ?? 0) || a.index - b.index);
+    };
 
-    $('ach-grid').innerHTML = list.map((t, i) => {
-      const r = RARITY[t.rarity];
-      const name = t.hidden ? 'Secret' : t.name;
-      const desc = t.hidden ? 'Some codes never go out of style' : t.desc;
-      let foot;
-      if (t.owned) {
-        foot = `<span class="status ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Unlocked</span>${t.at ? `<span class="date">${fmtDate(t.at)}</span>` : ''}`;
-      } else if (t.prog) {
-        foot = `<div class="prog"><div class="stat-bar"><i style="--w:${t.prog.ratio * 100}%"></i></div><small>${t.prog.value}/${t.prog.target}</small></div>`;
-      } else {
-        foot = `<span class="status">${LOCK_SVG}Locked</span>`;
-      }
-      return `<article class="ach-card r-${t.rarity}${t.owned ? ' owned' : ' locked'}${t.isNew ? ' is-new' : ''}" style="--i:${Math.min(i, 16)}">
-        ${t.isNew ? '<span class="new-tag">New</span><i class="sparks"><i></i><i></i><i></i><i></i></i>' : ''}
-        <div class="ach-badge">${badgeSvg(t.id, { locked: !t.owned, hidden: t.hidden })}${t.owned ? '' : `<span class="lock-pip">${LOCK_SVG}</span>`}</div>
-        <div class="ach-body">
-          <div class="ach-top"><span class="rarity r-${t.rarity}">${r.label}</span><span class="xp">${t.owned ? `+${r.xp} XP` : t.hidden ? '??? XP' : `${r.xp} XP`}</span></div>
-          <h4>${esc(name)}</h4>
-          <p>${esc(desc)}</p>
-          <div class="ach-foot">${foot}</div>
-        </div>
-      </article>`;
+    // Tabs show owned / total per category
+    const count = (cat) => {
+      const all = this.trophies.filter((t) => cat === 'all' || t.category === cat);
+      return `${all.filter((t) => t.owned).length}/${all.length}`;
+    };
+    $('ach-filters').innerHTML = ['all', ...SHELVES].map((cat) =>
+      `<button class="cat-tab${cat === this.trophyCat ? ' active' : ''}" role="tab" aria-selected="${cat === this.trophyCat}" data-cat="${cat}">
+        ${cat === 'all' ? 'All' : CATEGORY[cat]}<small>${count(cat)}</small></button>`).join('');
+
+    const sort = $('ach-sort').value;
+    const order = (list) => {
+      if (sort === 'recent') list.sort((a, b) => (b.at ?? 0) - (a.at ?? 0) || a.index - b.index);
+      else if (sort === 'rarity') list.sort((a, b) => RARITY[b.rarity].rank - RARITY[a.rarity].rank || a.index - b.index);
+      else if (sort === 'progress') list.sort((a, b) => Number(a.owned) - Number(b.owned) || (b.prog?.ratio ?? 0) - (a.prog?.ratio ?? 0) || a.index - b.index);
+      return list;
+    };
+
+    let shown = 0, i = 0;
+    const shelves = (this.trophyCat === 'all' ? SHELVES : [this.trophyCat]).map((cat) => {
+      const inCat = this.trophies.filter((t) => t.category === cat);
+      const list = order(inCat.filter(pass));
+      if (!list.length) return '';
+      shown += list.length;
+      const owned = inCat.filter((t) => t.owned).length;
+      return `<section class="shelf">
+        <header><h3>${CATEGORY[cat]}</h3><span class="shelf-count">${owned} / ${inCat.length}</span>
+          <i class="shelf-bar"><i style="--w:${(owned / inCat.length) * 100}%"></i></i></header>
+        <div class="medals">${list.map((t) => this.medalHtml(t, i++)).join('')}</div>
+      </section>`;
     }).join('');
-    $('ach-empty').classList.toggle('hidden', list.length > 0);
+    $('ach-grid').innerHTML = shelves;
+    $('ach-empty').classList.toggle('hidden', shown > 0);
+  }
+
+  medalHtml(t, i) {
+    const r = RARITY[t.rarity];
+    const name = t.hidden ? 'Secret' : t.name;
+    let meta;
+    if (t.owned) meta = `<span class="m-xp">+${r.xp} XP</span>`;
+    else if (t.prog) meta = `<span class="m-prog"><i style="--w:${t.prog.ratio * 100}%"></i></span><span class="m-count">${t.prog.value}/${t.prog.target}</span>`;
+    else meta = `<span class="m-rarity">${t.hidden ? 'Hidden' : r.label}</span>`;
+    return `<button class="medal r-${t.rarity}${t.owned ? ' owned' : ' locked'}${t.isNew ? ' is-new' : ''}${t.id === this.selectedTrophy ? ' is-sel' : ''}"
+        data-id="${t.id}" style="--i:${Math.min(i, 20)}" aria-label="${esc(name)}, ${r.label}, ${t.owned ? 'unlocked' : 'locked'}">
+      ${t.isNew ? '<span class="m-new">New</span>' : ''}
+      ${t.owned ? '' : `<span class="m-lock">${LOCK_SVG}</span>`}
+      <span class="m-badge">${badgeSvg(t.id, { locked: !t.owned, hidden: t.hidden })}</span>
+      <span class="m-name">${esc(name)}</span>
+      <span class="m-meta">${meta}</span>
+    </button>`;
+  }
+
+  /** Detail panel for one achievement. */
+  inspect(id, fromTap = false) {
+    const t = this.trophies?.find((x) => x.id === id);
+    if (!t) return;
+    this.selectedTrophy = id;
+    document.querySelectorAll('#ach-grid .medal').forEach((m) => m.classList.toggle('is-sel', m.dataset.id === id));
+    const r = RARITY[t.rarity];
+    const name = t.hidden ? 'Secret achievement' : t.name;
+    const desc = t.hidden ? 'Some codes never go out of style.' : t.desc;
+    let status;
+    if (t.owned) {
+      status = `<div class="insp-row"><span>Status</span><b class="ok">Unlocked</b></div>
+        ${t.at ? `<div class="insp-row"><span>Earned</span><b>${fmtDate(t.at)}</b></div>` : ''}`;
+    } else if (t.prog) {
+      status = `<div class="insp-prog"><div class="insp-prog-top"><span>Progress</span><b>${t.prog.value} / ${t.prog.target}</b></div>
+        <div class="stat-bar"><i style="--w:${t.prog.ratio * 100}%"></i></div></div>`;
+    } else {
+      status = '<div class="insp-row"><span>Status</span><b class="muted">Locked</b></div>';
+    }
+    const el = $('inspector');
+    el.className = `inspector r-${t.rarity}${t.owned ? ' owned' : ' locked'}${t.isNew ? ' is-new' : ''}`;
+    el.innerHTML = `
+      <div class="insp-stage"><i class="rays"></i><div class="insp-badge">${badgeSvg(t.id, { locked: !t.owned, hidden: t.hidden })}</div></div>
+      <div class="insp-tags"><span class="insp-rarity"><i></i>${r.label}</span><span>${CATEGORY[t.category]}</span>${t.isNew ? '<span class="insp-new">New</span>' : ''}</div>
+      <h3>${esc(name)}</h3>
+      <p>${esc(desc)}</p>
+      <div class="insp-rows">
+        <div class="insp-row"><span>Reward</span><b class="xp">${t.hidden ? '???' : `${r.xp} XP`}</b></div>
+        ${status}
+      </div>`;
+    // On narrow screens the panel sits above the shelves: bring it into view on tap.
+    if (fromTap && matchMedia('(max-width: 980px)').matches) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' });
   }
 
   /** Floating dust motes behind the Trophy Room. */

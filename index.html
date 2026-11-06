@@ -324,45 +324,55 @@
     <section id="screen-trophies" class="screen hub hidden">
       <div class="hub-fx" aria-hidden="true"><i class="sweep a"></i><i class="sweep b"></i><div class="motes" id="trophy-motes"></div></div>
       <div class="hub-wrap trophies">
-        <header class="hub-header">
-          <button class="back-link" id="btn-trophies-back" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Back</button>
+        <header class="trophy-header">
+          <button class="back-btn" id="btn-trophies-back" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
           <div>
-            <div class="eyebrow">Trophy Room</div>
+            <div class="eyebrow">Trophy room</div>
             <h2 class="hub-title">Achievements</h2>
-            <p class="hub-sub">Complete challenges, unlock rewards and build your legacy.</p>
           </div>
+          <p class="hub-sub">Complete challenges, unlock rewards and build your legacy.</p>
         </header>
 
-        <div class="trophy-top">
-          <div class="completion glass">
-            <div class="comp-ring" id="comp-ring"><b id="comp-pct">0%</b><small>Complete</small></div>
-            <div class="comp-info">
-              <div class="comp-count"><b id="ach-count">0</b><span id="ach-total">/ 0 unlocked</span></div>
-              <div class="comp-rank"><span class="label">Rank</span><b id="comp-rank">Amateur</b></div>
-              <div class="comp-next" id="comp-next"></div>
-              <div class="rarity-split" id="rarity-split"></div>
+        <section class="summary" aria-label="Completion">
+          <div class="comp-ring" id="comp-ring"><b id="comp-pct">0%</b></div>
+          <div class="sum-main">
+            <div class="sum-count"><b id="ach-count">0</b><span id="ach-total">/ 0</span></div>
+            <div class="sum-rank"><span>Rank</span><b id="comp-rank">Amateur</b></div>
+            <div class="sum-next" id="comp-next"></div>
+          </div>
+          <div class="rarity-split" id="rarity-split"></div>
+          <div class="sum-stats" id="trophy-stats"></div>
+        </section>
+
+        <div class="cabinet">
+          <div class="cabinet-main">
+            <nav class="cat-tabs" id="ach-filters" role="tablist" aria-label="Achievement categories"></nav>
+            <div class="toolbar">
+              <div class="seg-mini" id="ach-status" role="group" aria-label="Status">
+                <button data-status="all" class="active">All</button>
+                <button data-status="unlocked">Unlocked</button>
+                <button data-status="locked">Locked</button>
+              </div>
+              <label class="tool"><span class="sr-only">Rarity</span><select id="ach-rarity">
+                <option value="all">All rarities</option>
+                <option value="common">Common</option>
+                <option value="rare">Rare</option>
+                <option value="epic">Epic</option>
+                <option value="legendary">Legendary</option>
+              </select></label>
+              <label class="tool"><span class="sr-only">Sort</span><select id="ach-sort">
+                <option value="default">Default order</option>
+                <option value="recent">Recently unlocked</option>
+                <option value="rarity">Rarity</option>
+                <option value="progress">Closest to unlock</option>
+              </select></label>
+              <label class="tool search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><input id="ach-search" type="search" placeholder="Search" autocomplete="off"></label>
             </div>
+            <div class="shelves" id="ach-grid"></div>
+            <p class="ach-empty hidden" id="ach-empty">No achievements match. Try another filter.</p>
           </div>
-          <div class="featured" id="featured"></div>
+          <aside class="inspector" id="inspector" aria-live="polite"></aside>
         </div>
-
-        <div class="trophy-stats" id="trophy-stats"></div>
-
-        <div class="trophy-controls">
-          <div class="filters" id="ach-filters" role="tablist" aria-label="Filter achievements"></div>
-          <div class="trophy-tools">
-            <label class="search glass"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><input id="ach-search" type="search" placeholder="Search achievements" autocomplete="off"></label>
-            <label class="sort glass"><span class="sr-only">Sort</span><select id="ach-sort">
-              <option value="default">Default order</option>
-              <option value="recent">Recently unlocked</option>
-              <option value="rarity">Rarity</option>
-              <option value="progress">Closest to unlock</option>
-            </select></label>
-          </div>
-        </div>
-
-        <div class="ach-grid" id="ach-grid"></div>
-        <p class="ach-empty hidden" id="ach-empty">No achievements match. Try another filter.</p>
 
         <section class="album">
           <div class="album-head">

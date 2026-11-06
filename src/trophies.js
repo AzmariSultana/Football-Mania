@@ -79,21 +79,41 @@ export function trophyProgress(id, ctx) {
 
 let badgeId = 0;
 
-/** Illustrated badge: a faceted shield in the rarity's colours with the glyph on top. */
+// One silhouette per rarity, so rarity reads at a glance: coin, shield, hexagon, star.
+const poly = (pts) => `M${pts.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join('L')}Z`;
+const around = (n, r, offset = 0) => Array.from({ length: n }, (_, k) => {
+  const a = -Math.PI / 2 + offset + (k * 2 * Math.PI) / n;
+  return [32 + Math.cos(a) * r, 32 + Math.sin(a) * r];
+});
+const star = (points, r1, r2) => around(points * 2, 1).map((_, k) => {
+  const r = k % 2 ? r2 : r1, a = -Math.PI / 2 + (k * Math.PI) / points;
+  return [32 + Math.cos(a) * r, 32 + Math.sin(a) * r];
+});
+const circle = (r) => `M${32 - r} 32a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0Z`;
+const SHAPES = {
+  common: { outer: circle(29), inner: circle(22.5) },
+  rare: { outer: 'M32 3 56 12v20c0 14-10 24-24 29C18 56 8 46 8 32V12z', inner: 'M32 9 50 16v16c0 10.5-7.4 18-18 22-10.6-4-18-11.5-18-22V16z' },
+  epic: { outer: poly(around(6, 30)), inner: poly(around(6, 23)) },
+  legendary: { outer: poly(star(10, 31, 25.5)), inner: circle(20.5) },
+};
+
+/** Illustrated medallion: the rarity's silhouette and colours with the glyph on top. */
 export function badgeSvg(id, { locked = false, hidden = false } = {}) {
   const m = TROPHY_META[id] ?? { rarity: 'common', glyph: 'star' };
   const glyph = hidden ? G.secret : G[m.glyph];
+  const shape = SHAPES[m.rarity] ?? SHAPES.common;
   const u = `bd${badgeId++}`;
   return `<svg class="badge-svg r-${m.rarity}${locked ? ' locked' : ''}" viewBox="0 0 64 64" aria-hidden="true">
     <defs>
       <linearGradient id="${u}a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="b-hi"/><stop offset="1" class="b-lo"/></linearGradient>
-      <linearGradient id="${u}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="${u}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <clipPath id="${u}c"><path d="${shape.outer}"/></clipPath>
     </defs>
-    <path d="M32 3 56 12v20c0 14-10 24-24 29C18 56 8 46 8 32V12z" fill="url(#${u}a)"/>
-    <path d="M32 3 56 12v20c0 14-10 24-24 29C18 56 8 46 8 32V12z" fill="none" class="b-rim" stroke-width="2"/>
-    <path d="M32 9 50 16v16c0 10.5-7.4 18-18 22-10.6-4-18-11.5-18-22V16z" class="b-inner"/>
-    <path d="M32 3 56 12v8C40 18 22 24 8 30V12z" fill="url(#${u}b)" opacity=".5"/>
-    <g transform="translate(17 16) scale(1.25)" class="b-glyph" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${glyph}</g>
+    <path d="${shape.outer}" fill="url(#${u}a)"/>
+    <ellipse cx="32" cy="6" rx="36" ry="20" fill="url(#${u}b)" clip-path="url(#${u}c)" opacity=".5"/>
+    <path d="${shape.outer}" fill="none" class="b-rim" stroke-width="1.6"/>
+    <path d="${shape.inner}" class="b-inner"/>
+    <g transform="translate(17 17) scale(1.25)" class="b-glyph" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${glyph}</g>
   </svg>`;
 }
 
