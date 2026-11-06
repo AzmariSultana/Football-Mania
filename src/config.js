@@ -80,7 +80,6 @@ export const RULES = {
   timerMax: 30,
   timerMin: 5,
   timerDec: 3,
-  dayNightPeriod: 45,  // seconds from full day to full night (python DAY_NIGHT_PERIOD = 30)
 };
 
 export const GOAL = {

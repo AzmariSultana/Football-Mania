@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Game } from './game.js';
 import { setupPwa } from './pwa.js';
 import { PostFX } from './fx/post.js';
+import { PowerManager } from './power.js';
 
 // Replaces python main(): GLUT window + idle loop -> WebGL canvas + requestAnimationFrame.
 
@@ -55,38 +56,56 @@ function start() {
   window.addEventListener('resize', resize);
   resize();
 
-  // Adaptive resolution: drop the pixel ratio when frames get slow, restore it when there is headroom.
-  const maxRatio = Math.min(window.devicePixelRatio, 2);
+  // Adaptive resolution: drop the pixel ratio when frames get slow, restore it when there
+  // is headroom. Only measured during uncapped gameplay (capped frames are slow on purpose).
+  const deviceRatio = Math.min(window.devicePixelRatio, 2);
+  let maxRatio = deviceRatio;
   let ratio = maxRatio;
   let frameTimes = 0, frameCount = 0;
+  const setRatio = (r) => {
+    if (r === ratio) return;
+    ratio = r;
+    renderer.setPixelRatio(ratio);
+    resize();
+  };
   const adapt = (dt) => {
     frameTimes += dt;
     frameCount++;
     if (frameCount < 90) return;
     const avg = frameTimes / frameCount;
     frameTimes = frameCount = 0;
-    let next = ratio;
-    if (avg > 1 / 40 && ratio > 1) next = Math.max(1, ratio - 0.25);
-    else if (avg < 1 / 75 && ratio < maxRatio) next = Math.min(maxRatio, ratio + 0.25);
-    if (next !== ratio && !document.hidden) {
-      ratio = next;
-      renderer.setPixelRatio(ratio);
-      resize();
-    }
+    if (avg > 1 / 40 && ratio > 1) setRatio(Math.max(1, ratio - 0.25));
+    else if (avg < 1 / 75 && ratio < maxRatio) setRatio(Math.min(maxRatio, ratio + 0.25));
   };
 
-  const clock = new THREE.Clock();
   const focus = new THREE.Vector3();
-  renderer.setAnimationLoop(() => {
-    const dt = Math.min(clock.getDelta(), 0.05);
-    adapt(dt);
-    game.update(dt);
-    post.setMenu(game.state === 'menu');
-    post.setFocus(camera.position.distanceTo(focus.copy(game.focusPoint).setY(60)));
-    post.render(dt);
+  const power = new PowerManager({
+    renderer,
+    audio: game.audio,
+    mode: () => game.frameMode,
+    frame: (dt, mode, cap) => {
+      if (mode === 'play' && !cap) adapt(dt);
+      else frameTimes = frameCount = 0;
+      game.update(dt);
+      post.setMenu(game.state === 'menu');
+      post.setFocus(camera.position.distanceTo(focus.copy(game.focusPoint).setY(60)));
+      post.render(dt);
+    },
+    // Battery saver: fewer pixels and no ambient occlusion; frame caps tighten in power.js.
+    onSaverChange: (saver) => {
+      post.setPowerSave(saver);
+      // CSS side: no frosted-glass blur (re-computed over the canvas every frame) and no decorative loops.
+      document.documentElement.classList.toggle('power-saver', saver);
+      maxRatio = saver ? Math.min(deviceRatio, 1.25) : deviceRatio;
+      setRatio(saver ? Math.min(ratio, maxRatio) : maxRatio); // full resolution back immediately
+    },
   });
+  game.onPower = (pref) => power.setPreference(pref);
+  game.applySettings('power');
+  power.start();
 
   window.footballMania = game; // handy for debugging from the console
+  game.power = power;
 }
 
 setupPwa();

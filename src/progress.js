@@ -1,4 +1,5 @@
 import { dateKey } from './rng.js';
+import { LOCKER, LOCKER_DEFAULTS } from './cosmetics.js';
 
 // Everything the player keeps between sessions, stored in localStorage.
 
@@ -56,6 +57,8 @@ const DEFAULTS = () => ({
   career: { shots: 0, goals: 0, topCorners: 0, bestStreak: 0, xp: 0, games: 0, perfects: 0, bestPerfects: 0, bestWoodwork: 0, seconds: 0 },
   trophySeen: 0,
   modes: {},
+  locker: { ...LOCKER_DEFAULTS },
+  lockerSeen: null, // null until first save: everything unlocked so far counts as seen
 });
 
 // XP needed to go from level L to L + 1.
@@ -175,6 +178,57 @@ export class Progress {
     return this.data.daily.lastDate === dateKey();
   }
 
+  // ---------------------------------------------------------------- locker
+  /** Does the player meet an unlock rule from cosmetics.js? */
+  meets(rule) {
+    if (!rule) return true;
+    if (rule.level) return this.career.level >= rule.level;
+    if (rule.achievement) return this.has(rule.achievement);
+    if (rule.stickers) return this.stickerCount >= rule.stickers;
+    if (rule.dailyStreak) return Math.max(this.data.daily.bestStreak ?? 0, this.dailyStreak) >= rule.dailyStreak;
+    return false;
+  }
+
+  /** Keys ("category:id") of every unlocked locker item. */
+  unlockedItems() {
+    const out = [];
+    for (const [cat, def] of Object.entries(LOCKER)) {
+      for (const item of def.items) if (this.meets(item.unlock)) out.push(`${cat}:${item.id}`);
+    }
+    return out;
+  }
+
+  /** Unlocked items the player hasn't looked at in the Locker yet. */
+  newItems() {
+    const unlocked = this.unlockedItems();
+    if (!this.data.lockerSeen) {
+      this.data.lockerSeen = unlocked;
+      this.save();
+      return [];
+    }
+    return unlocked.filter((k) => !this.data.lockerSeen.includes(k));
+  }
+
+  markLockerSeen() {
+    this.data.lockerSeen = this.unlockedItems();
+    this.save();
+  }
+
+  equipped(category) {
+    const id = this.data.locker?.[category] ?? LOCKER_DEFAULTS[category];
+    const item = LOCKER[category].items.find((i) => i.id === id);
+    // Fall back to the default if the saved choice is unknown or no longer unlocked.
+    return item && this.meets(item.unlock) ? id : LOCKER_DEFAULTS[category];
+  }
+
+  equip(category, id) {
+    const item = LOCKER[category]?.items.find((i) => i.id === id);
+    if (!item || !this.meets(item.unlock)) return false;
+    this.data.locker = { ...LOCKER_DEFAULTS, ...this.data.locker, [category]: id };
+    this.save();
+    return true;
+  }
+
   /** Unlock time (ms) of an achievement, or null. */
   unlockedAt(id) {
     const t = this.data.achievements[id];
@@ -224,6 +278,7 @@ export class Progress {
     if (d.lastDate !== today && (!d.lastDate || d.lastDate < today)) {
       const yesterday = dateKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1));
       d.streak = d.lastDate === yesterday ? d.streak + 1 : 1;
+      d.bestStreak = Math.max(d.bestStreak ?? 0, d.streak);
       d.lastDate = today;
     }
     const newBest = score > (d.best[today] ?? 0);

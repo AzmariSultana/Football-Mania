@@ -1,6 +1,47 @@
 import { MODE, MODE_INFO, RULES } from './config.js';
 import { ACHIEVEMENTS, STICKERS, levelFor } from './progress.js';
 import { RARITY, CATEGORY, TROPHY_META, trophyProgress, badgeSvg, LOCK_SVG } from './trophies.js';
+import { LOCKER, unlockText } from './cosmetics.js';
+
+const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
+let previewId = 0;
+/** Small illustration of a Locker item: shirt, ball, trail streak or matchday sky. */
+function itemPreview(category, item) {
+  const u = `lp${previewId++}`;
+  if (category === 'kit') {
+    const dark = ((item.color >> 16) * 0.3 + ((item.color >> 8) & 255) * 0.59 + (item.color & 255) * 0.11) > 150;
+    return `<svg viewBox="0 0 64 56"><path d="M22 6 30 3q2 5 4 0l8 3 14 9-6 10-6-3v30H20V22l-6 3-6-10z" fill="${hex(item.color)}" stroke="rgba(255,255,255,.25)" stroke-width="1"/>
+      <text x="32" y="38" text-anchor="middle" font-size="14" font-weight="900" font-family="Big Shoulders Display, sans-serif" fill="${dark ? '#0b1428' : '#ffffff'}">10</text></svg>`;
+  }
+  if (category === 'ball') {
+    const p = hex(item.panel);
+    return `<svg viewBox="0 0 64 56"><defs><radialGradient id="${u}" cx=".35" cy=".3"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></radialGradient></defs>
+      <circle cx="32" cy="28" r="23" fill="${hex(item.base)}"/>
+      <path d="M32 19l8.6 6.2-3.3 10.1H27l-3.3-10.1z" fill="${p}"/>
+      <path d="M32 5.2l4 3.2-1.5 4.6h-5L28 8.4zM53.5 21l-1 5-4.6.6-2-4.6 3.2-3.6zM46 48l-4.8 1-2-4.4 3-3.8 4.6 1.4zM18 48l-2.8-5.8 4.6-1.4 3 3.8-2 4.4zM10.5 21l4.4-2.6 3.2 3.6-2 4.6-4.6-.6z" fill="${p}"/>
+      <circle cx="32" cy="28" r="23" fill="url(#${u})"/></svg>`;
+  }
+  if (category === 'trail') {
+    const stops = item.colors.map((c, i) => `<stop offset="${item.colors.length === 1 ? 1 : i / (item.colors.length - 1)}" stop-color="${hex(c)}"/>`).join('');
+    return `<svg viewBox="0 0 64 56"><defs><linearGradient id="${u}" x1="0" x2="1">${stops}</linearGradient>
+      <linearGradient id="${u}f" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#fff"/></linearGradient>
+      <mask id="${u}m"><rect width="64" height="56" fill="url(#${u}f)"/></mask></defs>
+      <path d="M4 44C18 40 32 26 48 16" stroke="url(#${u})" stroke-width="7" stroke-linecap="round" fill="none" mask="url(#${u}m)"/>
+      <circle cx="51" cy="14" r="7" fill="#fff"/></svg>`;
+  }
+  // matchday
+  const sky = item.sky;
+  const stops = sky.map((c, i) => `<stop offset="${i / Math.max(1, sky.length - 1)}" stop-color="${c}"/>`).join('');
+  const extra = item.id === 'rain'
+    ? '<path d="M14 8l-3 10M26 6l-3 10M38 9l-3 10M50 7l-3 10M20 20l-3 10M44 21l-3 10" stroke="#b8cde4" stroke-width="1.6" stroke-linecap="round"/>'
+    : item.id === 'night' ? '<circle cx="14" cy="10" r="1.2" fill="#fff"/><circle cx="40" cy="7" r="1" fill="#fff"/><circle cx="52" cy="14" r="1.3" fill="#fff"/><circle cx="26" cy="15" r="1" fill="#fff"/>'
+      : item.id === 'golden' ? '<circle cx="46" cy="30" r="8" fill="#ffd27a"/>'
+        : item.id === 'day' ? '<circle cx="48" cy="12" r="6" fill="#fff6d5"/>'
+          : '<text x="32" y="27" text-anchor="middle" font-size="18" font-weight="900" font-family="Big Shoulders Display, sans-serif" fill="#fff">?</text>';
+  return `<svg viewBox="0 0 64 56"><defs><linearGradient id="${u}" x1="0" y1="0" x2="0" y2="1">${stops}</linearGradient>
+    <clipPath id="${u}c"><rect x="2" y="2" width="60" height="52" rx="9"/></clipPath></defs>
+    <g clip-path="url(#${u}c)"><rect width="64" height="56" fill="url(#${u})"/>${extra}<rect y="38" width="64" height="18" fill="#2f6a2c"/><path d="M0 46h64" stroke="rgba(255,255,255,.5)"/></g></svg>`;
+}
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['menu', 'modes', 'pause', 'over', 'help', 'trophies', 'career', 'settings'];
@@ -114,6 +155,31 @@ export class UI {
     on('btn-career', () => handlers.onCareer());
     on('btn-profile', () => handlers.onCareer());
     on('btn-career-close', () => this.show('menu'));
+    // Player card: Overview / Locker tabs, Locker categories and equipping
+    this.lockerCat = 'kit';
+    $('card-tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      e.stopPropagation();
+      handlers.onClick?.();
+      this.showCardPane(b.dataset.pane);
+    });
+    $('locker-cats').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      e.stopPropagation();
+      handlers.onClick?.();
+      this.lockerCat = b.dataset.cat;
+      this.renderLocker();
+    });
+    $('locker-grid').addEventListener('click', (e) => {
+      const tile = e.target.closest('.locker-item');
+      if (!tile || tile.classList.contains('locked')) return;
+      e.stopPropagation();
+      handlers.onClick?.();
+      handlers.onEquip?.(this.lockerCat, tile.dataset.id);
+      this.renderLocker();
+    });
     on('btn-daily', () => handlers.onDaily());
     on('btn-practice', () => handlers.onPractice());
     on('btn-settings', () => this.show('settings'));
@@ -361,7 +427,9 @@ export class UI {
     $('profile-level').textContent = c.level;
     $('profile-rank').textContent = `${c.rank} · Lv ${c.level}`;
     setRing($('profile-ring'), c.xp / c.next);
-    $('meta-career').textContent = `Lv ${c.level}`;
+    const fresh = progress.newItems().length;
+    $('meta-career').innerHTML = fresh ? `<span class="new-badge">${fresh} new</span> Lv ${c.level}` : `Lv ${c.level}`;
+    $('meta-career').classList.toggle('live', fresh > 0);
     const daily = $('meta-daily');
     const todayBest = progress.dailyBest();
     daily.textContent = dailyStreak > 0 ? `${dailyStreak}-day streak` : todayBest ? `Best ${todayBest}` : 'New today';
@@ -410,7 +478,69 @@ export class UI {
     const bests = progress.bestsMap();
     $('career-records').innerHTML = [0, 1, 2, 3, 4].map((m) =>
       `<div><span>${MODE_SHORT[m]}${m === 3 ? ' · today' : ''}</span><b>${bests[m] ?? 0}</b></div>`).join('');
+
+    // The next level-based reward, so levelling up always has a visible target.
+    let next = null;
+    for (const [cat, def] of Object.entries(LOCKER)) {
+      for (const item of def.items) {
+        const lv = item.unlock?.level;
+        if (lv && lv > c.level && (!next || lv < next.lv)) next = { lv, item, cat };
+      }
+    }
+    $('career-next-reward').innerHTML = next
+      ? `Next reward: <b>${esc(next.item.name)}</b> ${esc(LOCKER[next.cat].label.toLowerCase())} at level ${next.lv}`
+      : 'Every level reward unlocked';
+
+    this.progressRef = progress;
+    $('locker-dot').classList.toggle('hidden', progress.newItems().length === 0);
+    this.showCardPane('overview');
     this.show('career');
+  }
+
+  showCardPane(pane) {
+    $('card-tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.pane === pane));
+    $('pane-overview').classList.toggle('hidden', pane !== 'overview');
+    $('pane-locker').classList.toggle('hidden', pane !== 'locker');
+    if (pane === 'locker') {
+      this.lockerFresh = new Set(this.progressRef.newItems());
+      this.renderLocker();
+      this.progressRef.markLockerSeen();
+      $('locker-dot').classList.add('hidden');
+    }
+  }
+
+  renderLocker() {
+    const p = this.progressRef;
+    if (!p) return;
+    const unlocked = new Set(p.unlockedItems());
+    $('locker-cats').innerHTML = Object.entries(LOCKER).map(([cat, def]) => {
+      const owned = def.items.filter((i) => unlocked.has(`${cat}:${i.id}`)).length;
+      return `<button class="${cat === this.lockerCat ? 'active' : ''}" data-cat="${cat}" role="tab">${def.label}<small>${owned}/${def.items.length}</small></button>`;
+    }).join('');
+    const cat = this.lockerCat;
+    const equipped = p.equipped(cat);
+    const achName = (id) => ACHIEVEMENTS.find((a) => a.id === id)?.name ?? id;
+    $('locker-grid').innerHTML = LOCKER[cat].items.map((item, i) => {
+      const key = `${cat}:${item.id}`;
+      const isOwned = unlocked.has(key);
+      const isOn = item.id === equipped;
+      const state = isOn ? 'Equipped' : isOwned ? 'Equip' : unlockText(item.unlock, achName);
+      return `<button class="locker-item${isOn ? ' equipped' : ''}${isOwned ? '' : ' locked'}" data-id="${item.id}" style="--i:${i}"
+          ${isOwned ? '' : 'aria-disabled="true"'} aria-pressed="${isOn}">
+        ${this.lockerFresh?.has(key) ? '<span class="li-new">New</span>' : ''}
+        ${isOwned ? '' : '<svg class="li-lock" viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3"/><rect x="5" y="11" width="14" height="10" rx="2"/></svg>'}
+        <span class="li-preview">${itemPreview(cat, item)}</span>
+        <span class="li-name">${esc(item.name)}</span>
+        <span class="li-state">${esc(state)}</span>
+      </button>`;
+    }).join('');
+    const hints = {
+      kit: 'Your kit in every match. Keepers always wear a contrasting colour.',
+      ball: 'The match ball. The golden power-up still turns it gold for one shot.',
+      trail: 'The streak behind your shots. Streaks of 3+ still set it on fire.',
+      matchday: 'Normal modes use this condition. <b>The Daily Challenge always has its own.</b>',
+    };
+    $('locker-hint').innerHTML = hints[cat];
   }
 
   setHud(visible) {
@@ -829,7 +959,10 @@ export class UI {
   }
 
   /** Post-match results: grade, score, run stats, XP earned and this run's unlocks. */
-  showGameOver({ modeName, score, best, newBest, goals, shots, streak, dailyText, unlocks, xpStart = 0, xpEnd = 0, isDaily = false }) {
+  showGameOver({ modeName, score, best, newBest, goals, shots, streak, dailyText, unlocks, xpStart = 0, xpEnd = 0, isDaily = false, rewards = [] }) {
+    $('over-rewards-wrap').classList.toggle('hidden', !rewards.length);
+    $('over-rewards').innerHTML = rewards.map((r) =>
+      `<span class="res-medal reward">${itemPreview(r.category, r.item)}<b>${esc(r.item.name)}</b><small>${esc(r.label)}</small></span>`).join('');
     $('over-mode').textContent = modeName;
 
     // Grade the run on points (the Daily has only 10 kicks, so its bar is lower).

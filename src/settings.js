@@ -7,12 +7,14 @@ export const SETTING_OPTIONS = {
   graphics: ['low', 'medium', 'high'],
   camera: ['broadcast', 'first'],
   motion: ['on', 'off'],
+  power: ['auto', 'on', 'off'],
 };
 
 const DEFAULTS = {
   graphics: touch ? 'medium' : 'high',
   camera: 'broadcast',
   motion: matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'off' : 'on',
+  power: 'auto', // battery saver: auto = when the battery is low and not charging
 };
 
 export class Settings {

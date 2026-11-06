@@ -15,6 +15,7 @@ function createBallGeometry() {
   }
 
   const colors = new Float32Array(pos.count * 3);
+  const panel = new Uint8Array(pos.count); // 1 = pentagon panel, 0 = base, used to repaint designs
   const normals = new Float32Array(pos.count * 3);
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
   const threshold = Math.cos(0.34);
@@ -25,8 +26,12 @@ function createBallGeometry() {
     const centre = a.add(b).add(c).normalize();
     let best = -1;
     for (const corner of corners) best = Math.max(best, centre.dot(corner));
-    const shade = best > threshold ? 0.05 : 0.92;
-    for (let k = 0; k < 3; k++) colors.set([shade, shade, shade], (i + k) * 3);
+    const isPanel = best > threshold;
+    const shade = isPanel ? 0.05 : 0.92;
+    for (let k = 0; k < 3; k++) {
+      colors.set([shade, shade, shade], (i + k) * 3);
+      panel[i + k] = isPanel ? 1 : 0;
+    }
   }
   for (let i = 0; i < pos.count; i++) {
     a.fromBufferAttribute(pos, i).normalize();
@@ -34,6 +39,7 @@ function createBallGeometry() {
   }
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  geometry.userData.panel = panel;
   return geometry;
 }
 
@@ -62,7 +68,29 @@ export class Ball {
   }
 
   setGolden(golden) {
+    this.golden = golden;
     this.mesh.material = golden ? this.goldenMat : this.normalMat;
+  }
+
+  /** Repaint the ball with a Locker design ({ base, panel, rough?, metal?, glow? }). */
+  setDesign(design) {
+    if (!design || this.designId === design.id) return;
+    this.designId = design.id;
+    const geo = this.mesh.geometry;
+    const panel = geo.userData.panel;
+    const colors = geo.attributes.color;
+    const base = new THREE.Color(design.base), pc = new THREE.Color(design.panel);
+    for (let i = 0; i < panel.length; i++) {
+      const c = panel[i] ? pc : base;
+      colors.setXYZ(i, c.r, c.g, c.b);
+    }
+    colors.needsUpdate = true;
+    const m = this.normalMat;
+    m.roughness = design.rough ?? 0.38;
+    m.metalness = design.metal ?? 0;
+    m.emissive.set(design.glow ? design.panel : 0x000000);
+    m.emissiveIntensity = design.glow ?? 0;
+    // The golden power-up keeps its own look; the panels follow the design.
   }
 
   place(x, z) {

@@ -12,7 +12,11 @@ export class AudioFX {
   /** Browsers only allow audio after a user gesture. */
   unlock() {
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') this.ctx.resume();
+      // A user gesture while we're active also revives a context the browser suspended.
+      if (this.ctx.state === 'suspended' && !document.hidden) {
+        this.appSuspended = false;
+        this.ctx.resume().catch(() => {});
+      }
       return;
     }
     const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -39,6 +43,26 @@ export class AudioFX {
     this.muted = muted;
     try { localStorage.setItem(STORAGE_KEY, muted ? '1' : '0'); } catch { /* ignore */ }
     if (this.master) this.master.gain.setTargetAtTime(muted ? 0 : 0.8, this.ctx.currentTime, 0.05);
+  }
+
+  /**
+   * Inactive (tab hidden, window blurred, page backgrounded): suspend the whole audio
+   * graph. Looping crowd and wind noise stop with it and no new nodes are created, so
+   * nothing piles up across tab switches.
+   */
+  suspend() {
+    if (this.ctx && this.ctx.state === 'running') {
+      this.appSuspended = true;
+      this.ctx.suspend().catch(() => {});
+    }
+  }
+
+  /** Active again: resume only what suspend() paused (never starts audio before a gesture). */
+  resume() {
+    if (this.ctx && this.appSuspended) {
+      this.appSuspended = false;
+      this.ctx.resume().catch(() => {});
+    }
   }
 
   get ready() {

@@ -415,6 +415,87 @@
 .records b { font: 800 20px/1 var(--hero); color: var(--gold); }
 .career-header { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
 .career-header .screen-title { margin: 2px 0 0; }
+.career-pane.hidden { display: none !important; }
+.next-reward { color: #c5cfdc !important; }
+.career-rank .next-reward b { font: 700 13px var(--body); text-transform: none; color: var(--accent); }
+
+/* Overview / Locker tabs */
+.card-tabs { display: inline-flex; padding: 3px; border-radius: 10px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); }
+.card-tabs button {
+  pointer-events: auto;
+  position: relative;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  font: 700 13px var(--cond);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8193ab;
+  cursor: pointer;
+  transition: background 0.3s var(--ease-out), color 0.2s;
+}
+.card-tabs button:hover { color: #fff; }
+.card-tabs button.active { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.new-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+/* Locker */
+.locker-cats { display: flex; gap: 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
+.locker-cats button {
+  pointer-events: auto;
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px 10px;
+  border: 0;
+  background: none;
+  font: 700 14px var(--cond);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8193ab;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.locker-cats button small { font-size: 11px; color: #5d6e86; }
+.locker-cats button::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; background: var(--accent); transform: scaleX(0); transition: transform 0.3s var(--ease-out); }
+.locker-cats button.active { color: #fff; }
+.locker-cats button.active small { color: var(--accent); }
+.locker-cats button.active::after { transform: scaleX(1); }
+.locker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.locker-item {
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  animation: card-in 0.4s var(--ease-out) both;
+  animation-delay: calc(var(--i) * 0.03s);
+  transition: transform 0.3s var(--ease-out), border-color 0.3s, background 0.3s;
+}
+.locker-item:hover { transform: translateY(-3px); border-color: rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.06); }
+.locker-item.equipped { border-color: var(--accent); background: rgba(198, 255, 61, 0.07); box-shadow: 0 0 0 1px rgba(198, 255, 61, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3); }
+.locker-item.locked { cursor: default; }
+.locker-item.locked:hover { transform: none; }
+.locker-item.locked .li-preview { filter: grayscale(0.85) brightness(0.45); }
+.li-preview { width: 64px; height: 56px; display: grid; place-items: center; }
+.li-preview svg { width: 100%; height: 100%; }
+.li-name { font: 800 14px/1.05 var(--hero); letter-spacing: 0.04em; text-transform: uppercase; }
+.li-state { font: 700 10.5px/1.25 var(--cond); letter-spacing: 0.1em; text-transform: uppercase; color: #8193ab; }
+.locker-item.equipped .li-state { color: var(--accent); }
+.locker-item.locked .li-name { color: #8f9bad; }
+.li-new { position: absolute; top: 6px; left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--accent); color: #0b1428; font: 800 9px var(--cond); letter-spacing: 0.14em; text-transform: uppercase; }
+.li-lock { position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; fill: none; stroke: #8193ab; stroke-width: 2.2; stroke-linecap: round; }
+.locker-hint { margin: 12px 0 0; font-size: 12.5px; color: #8193ab; }
+.locker-hint b { color: #dbe3ee; }
 
 /* Two columns on wider screens so the whole card fits one screen:
    level + stats on the left, mode records on the right. */
@@ -422,17 +503,18 @@
   .dialog.career {
     width: min(940px, 100%);
     padding: clamp(18px, 3.2vh, 28px) 28px;
+  }
+  .career-pane.overview {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
     grid-template-areas:
-      "top top"
       "head label"
       "head records"
       "grid records";
-    grid-template-rows: auto auto auto 1fr;
+    grid-template-rows: auto auto 1fr;
     column-gap: 22px;
   }
-  .career-header { grid-area: top; margin-bottom: clamp(12px, 2.4vh, 20px); }
+  .career-header { margin-bottom: clamp(12px, 2.4vh, 20px); }
   .career .screen-title { font-size: clamp(32px, 4.4vh, 44px); }
   .career-head { grid-area: head; padding: 14px 16px; gap: 18px; }
   .career .big-ring { width: 88px; height: 88px; }
@@ -462,8 +544,13 @@
   #screen-career { padding: 12px; }
   .dialog.career { padding: 18px 16px; }
   .career .screen-title { font-size: 30px; }
-  .career-header { gap: 12px; margin-bottom: 12px; }
+  .career-header { gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
   .career-header .back-btn { width: 44px; height: 44px; }
+  .card-tabs { order: 20; flex: 1 1 100%; }
+  .card-tabs button { flex: 1; }
+  .locker-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .li-preview { width: 52px; height: 46px; }
+  .li-name { font-size: 12.5px; }
   .career-head { padding: 12px; gap: 14px; }
   .career .big-ring { width: 70px; height: 70px; }
   .career .big-ring b { font-size: 30px; }
@@ -722,3 +809,11 @@
   .res-points > b { font-size: 76px; }
   .grade { width: 92px; height: 102px; }
 }
+
+/* Locker reward notices */
+.nav-item em .new-badge { display: inline-block; margin-right: 6px; padding: 2px 6px; border-radius: 4px; background: var(--accent); color: #0b1428; font-weight: 800; letter-spacing: 0.1em; }
+.nav-item em.live .new-badge + * { color: inherit; }
+.res-unlocks-label.lime { color: var(--accent); }
+.res-medal.reward { background: rgba(198, 255, 61, 0.07); border-color: rgba(198, 255, 61, 0.35); }
+.res-medal.reward svg { width: 34px; height: 30px; }
+.res-medal small { font: 700 10px var(--cond); letter-spacing: 0.14em; text-transform: uppercase; color: #8193ab; }

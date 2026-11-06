@@ -288,6 +288,10 @@
               <span class="res-unlocks-label">Unlocked this run</span>
               <div class="over-unlocks" id="over-unlocks"></div>
             </div>
+            <div class="res-unlocks hidden" id="over-rewards-wrap">
+              <span class="res-unlocks-label lime">New in Locker</span>
+              <div class="over-unlocks" id="over-rewards"></div>
+            </div>
           </div>
         </div>
 
@@ -308,18 +312,30 @@
             <div class="eyebrow">Player card</div>
             <h2 class="screen-title sm">Your journey</h2>
           </div>
+          <nav class="card-tabs" id="card-tabs" role="tablist" aria-label="Player card">
+            <button class="active" data-pane="overview" role="tab">Overview</button>
+            <button data-pane="locker" role="tab">Locker<i class="new-dot hidden" id="locker-dot"></i></button>
+          </nav>
         </header>
-        <div class="career-head">
-          <div class="big-ring" id="career-ring"><b id="career-level">1</b><small>Level</small></div>
-          <div class="career-rank">
-            <b id="career-rank">Rookie</b>
-            <div class="stat-bar"><i id="career-xp-bar"></i></div>
-            <small id="career-xp">0 / 200 XP to next level</small>
+        <div class="career-pane overview" id="pane-overview">
+          <div class="career-head">
+            <div class="big-ring" id="career-ring"><b id="career-level">1</b><small>Level</small></div>
+            <div class="career-rank">
+              <b id="career-rank">Rookie</b>
+              <div class="stat-bar"><i id="career-xp-bar"></i></div>
+              <small id="career-xp">0 / 200 XP to next level</small>
+              <small class="next-reward" id="career-next-reward"></small>
+            </div>
           </div>
+          <div class="career-grid" id="career-grid"></div>
+          <div class="label section-label">Mode records</div>
+          <div class="records" id="career-records"></div>
         </div>
-        <div class="career-grid" id="career-grid"></div>
-        <div class="label section-label">Mode records</div>
-        <div class="records" id="career-records"></div>
+        <div class="career-pane locker hidden" id="pane-locker">
+          <nav class="locker-cats" id="locker-cats" role="tablist" aria-label="Locker categories"></nav>
+          <div class="locker-grid" id="locker-grid"></div>
+          <p class="locker-hint" id="locker-hint"></p>
+        </div>
       </div>
     </section>
 
@@ -343,6 +359,10 @@
         <div class="setting-row">
           <div><b>Camera motion</b><small>Menu drift and crowd wave</small></div>
           <div class="seg" data-setting="motion"><button data-value="on">On</button><button data-value="off">Off</button></div>
+        </div>
+        <div class="setting-row">
+          <div><b>Battery saver</b><small>Lighter effects and frame rate. Auto: when battery is low</small></div>
+          <div class="seg" data-setting="power"><button data-value="auto">Auto</button><button data-value="on">On</button><button data-value="off">Off</button></div>
         </div>
         <div class="actions">
           <button class="btn ghost" id="btn-menu-help">How to play</button>
@@ -419,7 +439,7 @@
     <section id="screen-help" class="screen hub hidden">
       <div class="hub-wrap help">
         <header class="hub-header">
-          <button class="back-link" id="btn-help-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Back</button>
+          <button class="back-btn" id="btn-help-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
           <div>
             <div class="eyebrow">Tutorial</div>
             <h2 class="hub-title">How to play</h2>

@@ -21,6 +21,7 @@ import { Input, PAD } from './input.js';
 import { UI } from './ui.js';
 import { Progress, ACHIEVEMENTS, STICKERS } from './progress.js';
 import { Settings } from './settings.js';
+import { LOCKER, findItem, pickCondition, CONDITION_LABEL } from './cosmetics.js';
 import { BOSSES } from './features/bosses.js';
 import { POWERUPS, POWERUP_IDS, POWERUP_STREAKS } from './features/powerups.js';
 import { Replay } from './features/replay.js';
@@ -28,7 +29,6 @@ import { Replay } from './features/replay.js';
 const PREVIEW_DOTS = 18;
 const LASER_DOTS = 44;
 const REPLAY_SPEED = 0.5;
-const KICKER_KITS = [0xd32f2f, 0xff7a1a, 0xf5f5f5, 0xffd600, 0x7e3ff2, 0x111418];
 const KEEPER_KITS = [0x2e9d4a, 0xff3d9a, 0x00bcd4, 0xc6ff3d, 0xff9800];
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
 
@@ -139,6 +139,7 @@ export class Game {
       onDaily: () => this.startMode(MODE.DAILY),
       onPractice: () => this.startMode(MODE.PRACTICE),
       onSetting: (key, value) => this.settings.set(key, value),
+      onEquip: (category, id) => this.equip(category, id),
       settings: this.settings,
     });
     this.settings.onChange((key) => this.applySettings(key));
@@ -220,7 +221,45 @@ export class Game {
     }
     if (!key || key === 'camera') this.rig.mode = s.get('camera') === 'first' ? CAM_FIRST_PERSON : CAM_ORBIT;
     if (!key || key === 'graphics') this.onGraphics?.(s.get('graphics'));
+    if (!key || key === 'power') this.onPower?.(s.get('power'));
     this.ui.syncSettings(s);
+  }
+
+  /** Dress the kicker, paint the ball and pick the shot trail from the Locker. */
+  applyLocker() {
+    const p = this.progress;
+    this.kicker.setShirt(findItem('kit', p.equipped('kit')).color);
+    this.ball.setDesign(findItem('ball', p.equipped('ball')));
+    this.trail = findItem('trail', p.equipped('trail'));
+  }
+
+  equip(category, id) {
+    if (!this.progress.equip(category, id)) return;
+    this.applyLocker();
+    this.refreshMenu();
+  }
+
+  /** Locker items this run unlocked (for the results screen). */
+  newLockerItems() {
+    const before = this.lockerBefore;
+    if (!before) return [];
+    return this.progress.unlockedItems().filter((k) => !before.has(k)).map((k) => {
+      const [category, id] = k.split(':');
+      return { category, label: LOCKER[category].label, item: findItem(category, id) };
+    });
+  }
+
+  /**
+   * What the frame pacer should target:
+   *  'play'    live gameplay: full frame rate
+   *  'paused'  paused or help over a match: almost static
+   *  'menu'    the main menu: ambient scene only
+   *  'overlay' a full-screen menu or results over the blurred stadium
+   */
+  get frameMode() {
+    const screen = this.ui.current;
+    if (this.state === STATE.PLAYING) return this.paused || screen === 'help' ? 'paused' : 'play';
+    return screen === 'menu' ? 'menu' : 'overlay';
   }
 
   get isPractice() {
@@ -251,14 +290,22 @@ export class Game {
     this.ui.show(null);
     this.ui.setHud(true);
     this.ui.setMode(MODE_INFO[mode].name);
-    this.stadium.cycleTime = 0;
+    // One matchday condition per match (the Daily's is the same for everyone today).
+    this.condition = pickCondition({
+      daily: mode === MODE.DAILY,
+      dateSeedValue: dateSeed(this.dailyDate),
+      preference: this.progress.equipped('matchday'),
+    });
+    this.stadium.setCondition(this.condition);
+    this.lockerBefore = new Set(this.progress.unlockedItems());
     this.runStart = this.time;
     this.xpAtStart = this.progress.career.totalXp; // for the results screen's "XP earned"
     this.applySettings('camera'); // every run starts from the chosen point of view
     this.resetRun();
     this.audio.unlock();
     this.audio.whistle();
-    this.ui.toast(this.isDaily ? `Daily Challenge · ${dateKey(this.dailyDate)} · ${DAILY.kicks} kicks` : 'Beat the wall, beat the keeper!', 2200);
+    const cond = CONDITION_LABEL[this.condition];
+    this.ui.toast(this.isDaily ? `Daily Challenge · ${cond} · ${DAILY.kicks} kicks` : `${cond} · Beat the wall, beat the keeper!`, 2400);
     if (this.progress.firstTime('perfect')) this.delayedTip('Tip: release inside the green band for a Perfect Strike', 2400);
   }
 
@@ -320,8 +367,10 @@ export class Game {
     this.replay.stop();
 
     // python: random shirt colours, kept visually distinct from each other.
-    this.kicker.setShirt(pick(KICKER_KITS));
-    this.keeperKit = pick(KEEPER_KITS);
+    this.applyLocker();
+    // Keep the keeper's kit clearly different from the player's.
+    const kit = findItem('kit', this.progress.equipped('kit')).color;
+    this.keeperKit = pick(KEEPER_KITS.filter((c) => c !== kit));
 
     this.ui.setScore(0);
     this.ui.setMisses(0);
@@ -526,7 +575,7 @@ export class Game {
     this.ui.clearBanner();
     this.refreshMenu();
     this.ui.showGameOver({
-      modeName: MODE_INFO[this.mode].name,
+      modeName: `${MODE_INFO[this.mode].name} · ${CONDITION_LABEL[this.condition] ?? 'Day'}`,
       score: this.score,
       best,
       newBest,
@@ -538,6 +587,7 @@ export class Game {
       xpStart: this.xpAtStart ?? this.progress.career.totalXp,
       xpEnd: this.progress.career.totalXp,
       isDaily: this.isDaily,
+      rewards: this.newLockerItems(),
     });
     this.audio.whistle(true);
     this.audio.setWind(0);
@@ -1311,7 +1361,9 @@ export class Game {
       _v.lerpVectors(this.trailFrom, b.position, i / n);
       this.glow.emit({
         position: _v, count: 1,
-        color: onFire ? [0xff8a2b, 0xffd23f] : this.shot && this.shot.power > 0.7 ? 0xffe9a8 : 0xffffff,
+        color: onFire ? [0xff8a2b, 0xffd23f]
+          : this.trail.id !== 'white' ? this.trail.colors
+            : this.shot && this.shot.power > 0.7 ? 0xffe9a8 : 0xffffff,
         speed: [0, 4], size: onFire ? [6, 8] : [4, 5.5], life: [0.15, 0.25], gravity: 0, drag: 0,
       });
     }

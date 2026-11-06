@@ -123,7 +123,13 @@ export class PostFX {
 
   setQuality(q) {
     this.quality = q;
-    this.gtao.enabled = q === 'high';
+    this.gtao.enabled = q === 'high' && !this.powerSave;
+  }
+
+  /** Battery saver: skip ambient occlusion (an extra full scene pass every frame). */
+  setPowerSave(on) {
+    this.powerSave = on;
+    this.setQuality(this.quality);
   }
 
   /** Blend towards (or away from) the menu look: depth of field, deeper vignette, stronger bloom. */

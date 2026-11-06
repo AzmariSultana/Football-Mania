@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { GRID_LENGTH, FIELD_BACK, FIELD_FRONT, GOAL, RULES, lerp } from '../config.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GRID_LENGTH, FIELD_BACK, FIELD_FRONT, GOAL } from '../config.js';
 
 const _crowdMatrix = new THREE.Matrix4();
 const FIELD_W = GRID_LENGTH * 2;
@@ -270,22 +271,50 @@ const SKY_FRAG = /* glsl */`
     #include <colorspace_fragment>
   }`;
 
-const DAY = {
-  top: new THREE.Color(0x2f72d0), horizon: new THREE.Color(0xbfe0f7), ground: new THREE.Color(0x3c5a3a),
-  key: new THREE.Color(0xfff1d8), keyIntensity: 2.6, hemi: 1.15,
-  keyPos: new THREE.Vector3(700, 1300, 900),
-};
-const NIGHT = {
-  top: new THREE.Color(0x03060f), horizon: new THREE.Color(0x16223d), ground: new THREE.Color(0x0b1410),
-  key: new THREE.Color(0xe4ecff), keyIntensity: 2.1, hemi: 0.3,
-  keyPos: new THREE.Vector3(-650, 1400, 1000),
+// Matchday conditions. Each match is played under one of these (no mid-match day/night
+// cycle); the stadium eases between them. `lights` drives floodlights, boards and shafts.
+const preset = (o) => ({
+  top: new THREE.Color(o.top), horizon: new THREE.Color(o.horizon), ground: new THREE.Color(o.ground),
+  key: new THREE.Color(o.key), keyIntensity: o.keyIntensity, hemi: o.hemi,
+  keyPos: new THREE.Vector3(...o.keyPos),
+  lights: o.lights, stars: o.stars, rain: o.rain ?? 0, fogNear: o.fogNear, fogFar: o.fogFar,
+});
+export const CONDITION_PRESETS = {
+  day: preset({
+    top: 0x2f72d0, horizon: 0xbfe0f7, ground: 0x3c5a3a, key: 0xfff1d8, keyIntensity: 2.6, hemi: 1.15,
+    keyPos: [700, 1300, 900], lights: 0, stars: 0, fogNear: 3200, fogFar: 7000,
+  }),
+  golden: preset({
+    top: 0x34508f, horizon: 0xffa868, ground: 0x4a5a35, key: 0xffbf86, keyIntensity: 2.4, hemi: 0.7,
+    keyPos: [1500, 480, 650], lights: 0.3, stars: 0, fogNear: 2600, fogFar: 6600,
+  }),
+  night: preset({
+    top: 0x03060f, horizon: 0x16223d, ground: 0x0b1410, key: 0xe4ecff, keyIntensity: 2.1, hemi: 0.3,
+    keyPos: [-650, 1400, 1000], lights: 1, stars: 1, fogNear: 3200, fogFar: 7000,
+  }),
+  rain: preset({
+    top: 0x252d38, horizon: 0x56626f, ground: 0x26352a, key: 0xd6e2ee, keyIntensity: 1.35, hemi: 0.7,
+    keyPos: [-400, 1500, 800], lights: 0.75, stars: 0, rain: 1, fogNear: 1300, fogFar: 4300,
+  }),
+  // The main menu: evening under the floodlights.
+  menu: preset({
+    top: 0x0c1c36, horizon: 0x384862, ground: 0x152218, key: 0xe9edf8, keyIntensity: 2.2, hemi: 0.47,
+    keyPos: [-380, 1380, 980], lights: 0.8, stars: 0.7, fogNear: 1800, fogFar: 5200,
+  }),
 };
 
 export class Stadium {
   constructor(scene, renderer) {
     this.scene = scene;
     this.time = 0;
-    this.cycleTime = 0;
+    this.condition = 'day';
+    // Current (eased) environment, starting on the menu look.
+    const m = CONDITION_PRESETS.menu;
+    this.env = {
+      top: m.top.clone(), horizon: m.horizon.clone(), ground: m.ground.clone(), key: m.key.clone(),
+      keyIntensity: m.keyIntensity, hemi: m.hemi, keyPos: m.keyPos.clone(),
+      lights: m.lights, stars: m.stars, rain: 0, fogNear: m.fogNear, fogFar: m.fogFar,
+    };
     this.excitement = 0;
     this.day = 1;
     this.menuMix = 1;     // 1 = cinematic evening look of the main menu
@@ -300,15 +329,66 @@ export class Stadium {
     this.buildFloodlights();
     this.buildFlags();
     this.buildAtmosphere();
+    this.buildRain();
+    this.mergeStatic();
+    this.freezeStatic();
+  }
+
+  /**
+   * The stadium is built from hundreds of boxes and cylinders (stand tiers, lamps,
+   * poles, frames). Merge static opaque meshes that share a material and shadow flags
+   * into one mesh each: far fewer draw calls in every pass (main, shadow, AO, DoF).
+   */
+  mergeStatic() {
+    this.scene.updateMatrixWorld(true);
+    const groups = new Map();
+    this.scene.traverse((o) => {
+      if (!o.isMesh || o.isInstancedMesh || o.userData.dynamic || o.userData.noMerge) return;
+      const m = o.material;
+      if (Array.isArray(m) || !m.isMeshStandardMaterial || m.transparent) return;
+      const key = `${m.uuid}|${o.castShadow}|${o.receiveShadow}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(o);
+    });
+    for (const meshes of groups.values()) {
+      if (meshes.length < 2) continue;
+      const geos = meshes.map((o) => {
+        const g = o.geometry.index ? o.geometry.clone() : o.geometry.clone();
+        g.applyMatrix4(o.matrixWorld);
+        g.clearGroups();
+        return g;
+      });
+      const merged = mergeGeometries(geos, false);
+      for (const g of geos) g.dispose();
+      if (!merged) continue; // incompatible attributes: leave these meshes as they are
+      const first = meshes[0];
+      const mesh = new THREE.Mesh(merged, first.material);
+      mesh.castShadow = first.castShadow;
+      mesh.receiveShadow = first.receiveShadow;
+      for (const o of meshes) o.parent.remove(o);
+      this.scene.add(mesh);
+    }
+    // Drop groups left empty by the merge (floodlight heads).
+    for (const o of [...this.scene.children]) if (o.isGroup && !o.children.length) this.scene.remove(o);
+  }
+
+  /** Nothing in the stadium moves except a few marked objects: skip their per-frame matrix updates. */
+  freezeStatic() {
+    this.scene.traverse((o) => {
+      if (o === this.scene || o.userData.dynamic) return;
+      o.updateMatrix();
+      o.matrixAutoUpdate = false;
+    });
+    this.scene.updateMatrixWorld(true);
   }
 
   // ------------------------------------------------------------------ lights
   buildLights() {
-    this.hemi = new THREE.HemisphereLight(0xcfe6ff, 0x3a5a2a, DAY.hemi);
+    this.hemi = new THREE.HemisphereLight(0xcfe6ff, 0x3a5a2a, CONDITION_PRESETS.day.hemi);
     this.scene.add(this.hemi);
 
-    const key = new THREE.DirectionalLight(DAY.key, DAY.keyIntensity);
-    key.position.copy(DAY.keyPos);
+    const key = new THREE.DirectionalLight(CONDITION_PRESETS.day.key, CONDITION_PRESETS.day.keyIntensity);
+    key.position.copy(CONDITION_PRESETS.day.keyPos);
     key.target.position.set(0, 0, 350);
     key.castShadow = true;
     // Phones and tablets get a lighter shadow map.
@@ -319,15 +399,18 @@ export class Stadium {
     sc.near = 200; sc.far = 4000;
     key.shadow.bias = -0.0004;
     key.shadow.normalBias = 0.6;
+    // The sun moves with the matchday condition, so it keeps per-frame matrix updates.
+    key.userData.dynamic = true;
+    key.target.userData.dynamic = true;
     this.scene.add(key, key.target);
     this.key = key;
   }
 
   buildSky() {
     this.skyUniforms = {
-      topColor: { value: DAY.top.clone() },
-      horizonColor: { value: DAY.horizon.clone() },
-      groundColor: { value: DAY.ground.clone() },
+      topColor: { value: CONDITION_PRESETS.day.top.clone() },
+      horizonColor: { value: CONDITION_PRESETS.day.horizon.clone() },
+      groundColor: { value: CONDITION_PRESETS.day.ground.clone() },
     };
     const sky = new THREE.Mesh(
       new THREE.SphereGeometry(6000, 32, 16),
@@ -357,7 +440,7 @@ export class Stadium {
     }));
     this.scene.add(this.stars);
 
-    this.scene.fog = new THREE.Fog(DAY.horizon.clone(), 3200, 7000);
+    this.scene.fog = new THREE.Fog(CONDITION_PRESETS.day.horizon.clone(), 3200, 7000);
   }
 
   buildPitch(maxAnisotropy) {
@@ -546,6 +629,7 @@ export class Stadium {
       pole.position.set(x, top + 60, z);
       this.scene.add(pole);
       const flag = new THREE.Mesh(geo, mats[n++ % mats.length]);
+      flag.userData.noMerge = true;
       flag.position.set(x, top + 96, z);
       flag.rotation.y = -0.5; // blowing towards the far side
       this.scene.add(flag);
@@ -573,7 +657,7 @@ export class Stadium {
       s.position.set(Math.cos(a) * r, 120 + Math.random() * 160, 300 + Math.sin(a) * r * 0.75);
       const sc = 700 + Math.random() * 500;
       s.scale.set(sc, sc * 0.45, 1);
-      s.userData = { base: s.position.clone(), phase: Math.random() * 10 };
+      s.userData = { base: s.position.clone(), phase: Math.random() * 10, dynamic: true };
       this.scene.add(s);
       this.haze.push(s);
     }
@@ -592,6 +676,8 @@ export class Stadium {
       const beam = new THREE.Mesh(cone, mat);
       beam.renderOrder = 2;
       const pool = new THREE.Mesh(new THREE.CircleGeometry(1, 32), poolMat);
+      beam.userData.dynamic = true;
+      pool.userData.dynamic = true;
       pool.rotation.x = -Math.PI / 2;
       pool.position.y = 1.5;
       this.scene.add(beam, pool);
@@ -635,37 +721,89 @@ export class Stadium {
     this.excitement = Math.max(0, this.excitement - dt * 0.35);
   }
 
-  /** python set_background_color: brightness 1 -> 0.2 over DAY_NIGHT_PERIOD, then back. */
-  updateDayNight(dt, running) {
-    if (running) this.cycleTime += dt;
-    const period = RULES.dayNightPeriod;
-    const t = (this.cycleTime % (2 * period)) / period;
-    const tri = t < 1 ? t : 2 - t;                       // 0 = day, 1 = night
-    const cycleNight = tri * tri * (3 - 2 * tri);         // smoothstep
-    // The menu is set in the evening, under the floodlights.
-    const night = lerp(cycleNight, 0.8, this.menuMix);
-    this.day = 1 - night;
-    this.night = night;
+  /** Set the matchday condition ('day' | 'golden' | 'night' | 'rain'); the scene eases into it. */
+  setCondition(name, instant = false) {
+    this.condition = CONDITION_PRESETS[name] ? name : 'day';
+    if (instant) this.applyEnvironment(1, CONDITION_PRESETS[this.condition]);
+  }
+
+  /** Ease the lighting, sky, fog and weather towards the menu look or the match condition. */
+  updateEnvironment(dt) {
+    const target = CONDITION_PRESETS[this.inMenu ? 'menu' : this.condition];
+    this.applyEnvironment(1 - Math.exp(-dt * 1.6), target);
+  }
+
+  applyEnvironment(k, t) {
+    const e = this.env;
+    e.top.lerp(t.top, k);
+    e.horizon.lerp(t.horizon, k);
+    e.ground.lerp(t.ground, k);
+    e.key.lerp(t.key, k);
+    e.keyPos.lerp(t.keyPos, k);
+    for (const p of ['keyIntensity', 'hemi', 'lights', 'stars', 'rain', 'fogNear', 'fogFar']) e[p] += (t[p] - e[p]) * k;
 
     const u = this.skyUniforms;
-    u.topColor.value.lerpColors(DAY.top, NIGHT.top, night);
-    u.horizonColor.value.lerpColors(DAY.horizon, NIGHT.horizon, night);
-    u.groundColor.value.lerpColors(DAY.ground, NIGHT.ground, night);
-    this.scene.fog.color.copy(u.horizonColor.value);
+    u.topColor.value.copy(e.top);
+    u.horizonColor.value.copy(e.horizon);
+    u.groundColor.value.copy(e.ground);
+    this.scene.fog.color.copy(e.horizon);
+    this.scene.fog.near = e.fogNear;
+    this.scene.fog.far = e.fogFar;
 
-    this.key.color.lerpColors(DAY.key, NIGHT.key, night);
-    this.key.intensity = lerp(DAY.keyIntensity, NIGHT.keyIntensity, night);
-    this.key.position.lerpVectors(DAY.keyPos, NIGHT.keyPos, night);
-    this.hemi.intensity = lerp(DAY.hemi, NIGHT.hemi, night);
+    this.key.color.copy(e.key);
+    this.key.intensity = e.keyIntensity;
+    this.key.position.copy(e.keyPos);
+    this.hemi.intensity = e.hemi;
 
-    this.stars.material.opacity = Math.max(0, night - 0.3) * 1.4;
-    this.glowMat.opacity = night * 0.95;
-    this.lampMat.emissiveIntensity = 0.1 + night * 4;
-    for (const m of this.boardMats) m.emissiveIntensity = 0.3 + night * 0.9;
-    this.beamMat.uniforms.intensity.value = Math.max(0, night - 0.25) * 0.16;
-    this.hazeMat.opacity = 0.05 + night * 0.18 * (0.5 + this.menuMix * 0.5);
-    this.scene.fog.near = lerp(3200, 1800, this.menuMix);
-    this.scene.fog.far = lerp(7000, 5200, this.menuMix);
+    const L = e.lights;
+    this.day = 1 - L;
+    this.night = L;
+    this.stars.material.opacity = e.stars;
+    this.glowMat.opacity = L * 0.95;
+    this.lampMat.emissiveIntensity = 0.1 + L * 4;
+    for (const m of this.boardMats) m.emissiveIntensity = 0.3 + L * 0.9;
+    // Light shafts read stronger through rain.
+    this.beamMat.uniforms.intensity.value = Math.max(0, L - 0.25) * 0.16 * (1 + e.rain * 0.8);
+    this.hazeMat.opacity = 0.05 + L * 0.18 * (0.5 + this.menuMix * 0.5) + e.rain * 0.1;
+    this.rainMat.opacity = e.rain * 0.55;
+    this.rain.visible = e.rain > 0.01;
+  }
+
+  buildRain() {
+    const count = 1600;
+    const pos = new Float32Array(count * 6);
+    this.drops = [];
+    for (let i = 0; i < count; i++) {
+      this.drops.push({
+        x: -1300 + Math.random() * 2600, y: Math.random() * 950, z: -500 + Math.random() * 2000,
+        v: 900 + Math.random() * 300,
+      });
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    this.rainMat = new THREE.LineBasicMaterial({ color: 0xb8cde4, transparent: true, opacity: 0, depthWrite: false, fog: true });
+    this.rain = new THREE.LineSegments(geo, this.rainMat);
+    this.rain.frustumCulled = false;
+    this.rain.visible = false;
+    this.scene.add(this.rain);
+  }
+
+  updateRain(dt) {
+    if (!this.rain.visible) return;
+    const pos = this.rain.geometry.attributes.position;
+    const a = pos.array;
+    const slant = 0.18;
+    for (let i = 0; i < this.drops.length; i++) {
+      const d = this.drops[i];
+      d.y -= d.v * dt;
+      d.x += d.v * slant * dt;
+      if (d.y < 0) { d.y += 950; d.x = -1300 + Math.random() * 2600; }
+      if (d.x > 1300) d.x -= 2600;
+      const o = i * 6;
+      a[o] = d.x; a[o + 1] = d.y; a[o + 2] = d.z;
+      a[o + 3] = d.x - 26 * slant; a[o + 4] = d.y + 26; a[o + 5] = d.z;
+    }
+    pos.needsUpdate = true;
   }
 
   updateAmbient(dt) {
@@ -698,12 +836,14 @@ export class Stadium {
     // Searchlight sweeps (menu only).
     const sweep = mm * Math.max(0, this.night - 0.3);
     this.poolMat.opacity = sweep * 0.22;
+    const sweepOn = sweep > 0.01;
     for (const s of this.sweeps) {
+      s.beam.visible = s.pool.visible = sweepOn;
+      if (!sweepOn) continue; // off outside the menu: no per-frame maths
       const a = t * 0.22 + s.phase;
       s.to.set(Math.sin(a) * 650, 0, 380 + Math.sin(a * 1.31 + s.phase) * 380);
       aimBeam(s.beam, s.from, s.to, 110);
       s.mat.uniforms.intensity.value = sweep * 0.2;
-      s.beam.visible = s.pool.visible = sweep > 0.01;
       s.pool.position.x = s.to.x;
       s.pool.position.z = s.to.z;
       s.pool.scale.setScalar(150);
@@ -722,7 +862,9 @@ export class Stadium {
     if (Math.abs(target - this.menuMix) < 0.002) this.menuMix = target;
     this.wave = this.motion ? this.menuMix : 0;
     this.windBoost = this.windBoost ?? 0;
-    this.updateDayNight(dt, running);
+    this.inMenu = menu;
+    this.updateEnvironment(dt);
+    this.updateRain(dt);
     this.updateAmbient(dt);
     // ~1000 fans: only animate every frame while they are celebrating (or doing
     // the wave), otherwise a gentle sway at ~20 fps is indistinguishable and cheaper.
@@ -732,7 +874,8 @@ export class Stadium {
     }
   }
 
+  /** Playing under the floodlights at night (not the menu look). */
   get isNight() {
-    return this.day < 0.35;
+    return this.condition === 'night' && !this.inMenu;
   }
 }

@@ -71,6 +71,7 @@ export class Particles {
     this.points = new THREE.Points(geo, this.material);
     this.points.frustumCulled = false;
     this.points.renderOrder = 5;
+    this.points.visible = false; // nothing to draw until something is emitted
     scene.add(this.points);
   }
 
@@ -120,6 +121,7 @@ export class Particles {
       this.flutter[i] = flutter * (0.5 + Math.random());
     }
     this.alive = this.max;
+    this.points.visible = true;
   }
 
   update(dt) {
@@ -149,6 +151,7 @@ export class Particles {
       this.size[i] = this.baseSize[i] * (0.6 + 0.4 * t);
     }
     this.alive = alive;
+    if (!alive) this.points.visible = false; // last particle died: stop drawing the pool
     const a = this.geometry.attributes;
     a.position.needsUpdate = a.color.needsUpdate = a.size.needsUpdate = a.alpha.needsUpdate = true;
   }

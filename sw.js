@@ -1,8 +1,9 @@
 // Service worker: makes the game installable and playable offline.
 //
 // - Precaches the app shell and Three.js on install.
-// - Pages: network first (so new deploys show up), falling back to the cache offline.
-// - Everything else: served from the cache, refreshed in the background.
+// - The game's own pages, styles and scripts: network first (so a deploy's files always
+//   load together), falling back to the cache offline.
+// - Versioned third-party files (Three.js, fonts): served from the cache, refreshed in the background.
 //
 // The deploy workflow replaces __BUILD__ with the commit SHA, so each deploy gets
 // a fresh cache and old ones are deleted. Every file in src/ and css/ must be
@@ -36,6 +37,8 @@ const ASSETS = [
   './src/rng.js',
   './src/progress.js',
   './src/settings.js',
+  './src/cosmetics.js',
+  './src/power.js',
   './src/trophies.js',
   './src/features/bosses.js',
   './src/features/powerups.js',
@@ -68,6 +71,7 @@ const ASSETS = [
   `${THREE}/examples/jsm/shaders/PoissonDenoiseShader.js`,
   `${THREE}/examples/jsm/shaders/OutputShader.js`,
   `${THREE}/examples/jsm/math/SimplexNoise.js`,
+  `${THREE}/examples/jsm/utils/BufferGeometryUtils.js`,
 ];
 
 self.addEventListener('install', (event) => {
@@ -110,7 +114,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for scripts, styles, icons, Three.js and fonts.
+  // The game's own files: network first, so the page, styles and scripts always come
+  // from the same deploy (serving cached CSS with a fresh page showed old layouts).
+  // The cache is only the offline fallback.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (cacheable(response)) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || Response.error())),
+    );
+    return;
+  }
+
+  // Versioned third-party files (Three.js, fonts): stale-while-revalidate.
   event.respondWith(
     caches.open(CACHE).then(async (cache) => {
       const cached = await cache.match(request);
