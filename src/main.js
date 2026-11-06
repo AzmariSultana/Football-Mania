@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Game } from './game.js';
 import { setupPwa } from './pwa.js';
+import { PostFX } from './fx/post.js';
 
 // Replaces python main(): GLUT window + idle loop -> WebGL canvas + requestAnimationFrame.
 
@@ -32,11 +33,19 @@ function start() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, 1, 5, 14000);
+  const post = new PostFX(renderer, scene, camera);
   const game = new Game(renderer, scene, camera);
+  game.onGraphics = (q) => {
+    post.setQuality(q);
+    renderer.shadowMap.type = q === 'low' ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+  };
+  game.applySettings('graphics');
 
   const resize = () => {
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h, false);
+    post.setPixelRatio(renderer.getPixelRatio());
+    post.setSize(w, h);
     camera.aspect = w / h;
     // Keep the goal in frame on narrow (portrait) screens.
     camera.fov = w / h < 1 ? 70 : 55;
@@ -67,11 +76,14 @@ function start() {
   };
 
   const clock = new THREE.Clock();
+  const focus = new THREE.Vector3();
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.05);
     adapt(dt);
     game.update(dt);
-    renderer.render(scene, camera);
+    post.setMenu(game.state === 'menu');
+    post.setFocus(camera.position.distanceTo(focus.copy(game.focusPoint).setY(60)));
+    post.render(dt);
   });
 
   window.footballMania = game; // handy for debugging from the console

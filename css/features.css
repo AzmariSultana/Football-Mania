@@ -125,70 +125,12 @@
 .ach-toast.tinted .kicker { color: var(--c, var(--gold)); }
 
 #btn-install { display: inline-flex; align-items: center; gap: 8px; }
-#btn-install svg { width: 18px; height: 18px; fill: currentColor; }
-.install-hint { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
 .install-hint b { color: var(--text); }
-
-#btn-trophies .count { margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); font-size: 11px; }
-
-.trophies {
-  width: min(780px, 100%);
-  max-height: calc(100vh - 32px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
-}
-.trophy-section { text-align: left; margin-bottom: 22px; }
-.trophy-section > .label { margin-bottom: 10px; }
-.hint-text { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
-.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
-.ach {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 10px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--line);
-}
-.ach .icon { font-size: 22px; width: 36px; text-align: center; }
-.ach b { display: block; font-size: 13px; }
-.ach span { font-size: 11px; color: var(--muted); }
-.ach.locked { opacity: 0.45; }
-.ach.locked .icon { filter: grayscale(1); }
-.ach.unlocked { border-color: rgba(255, 210, 63, 0.4); background: rgba(255, 210, 63, 0.07); }
-.sticker-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-.sticker {
-  aspect-ratio: 3 / 4;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border-radius: 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  font-size: 11px;
-  color: var(--muted);
-  text-align: center;
-  padding: 6px;
-}
-.sticker .icon { font-size: 28px; filter: grayscale(1) brightness(0.4); }
-.sticker.owned {
-  border-style: solid;
-  border-color: var(--c);
-  color: var(--text);
-  background: linear-gradient(160deg, color-mix(in srgb, var(--c) 30%, transparent), rgba(255, 255, 255, 0.03));
-  box-shadow: 0 0 16px color-mix(in srgb, var(--c) 35%, transparent);
-}
-.sticker.owned .icon { filter: none; }
 
 .over-daily { margin-top: 10px; color: var(--accent); font-weight: 600; font-size: 14px; }
 .over-unlocks { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: -8px 0 20px; }
 .over-unlocks span { padding: 4px 10px; border-radius: 999px; background: rgba(255, 210, 63, 0.14); border: 1px solid rgba(255, 210, 63, 0.4); font-size: 12px; }
 
-.mode-grid { grid-template-columns: repeat(4, 1fr); }
-.mode-card.daily { border-color: rgba(198, 255, 61, 0.45); background: linear-gradient(160deg, rgba(198, 255, 61, 0.12), var(--glass-strong) 60%); }
-.mode-card .streak { margin-top: 4px; font-size: 12px; color: var(--accent); }
 
 #banner.boss .banner-title {
   background: linear-gradient(180deg, #fff 10%, #ff2d55 60%, #7e3ff2);
@@ -265,11 +207,8 @@
 }
 
 @media (max-width: 1100px) {
-  .mode-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 600px) {
-  .mode-grid { grid-template-columns: 1fr; }
-  .sticker-grid { grid-template-columns: repeat(4, 1fr); }
   #achievement-stack { top: auto; bottom: 210px; }
 }
 @media (prefers-reduced-motion: reduce) {

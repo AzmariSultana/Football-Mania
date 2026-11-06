@@ -53,14 +53,39 @@ const DEFAULTS = () => ({
   bosses: [],
   tips: {},
   daily: { lastDate: null, streak: 0, best: {} },
+  career: { shots: 0, goals: 0, topCorners: 0, bestStreak: 0, xp: 0, games: 0, perfects: 0, bestPerfects: 0, bestWoodwork: 0, seconds: 0 },
+  trophySeen: 0,
+  modes: {},
 });
+
+// XP needed to go from level L to L + 1.
+const xpStep = (level) => 200 + 100 * (level - 1);
+const RANKS = [
+  [20, 'Legend'], [15, 'Free-kick Specialist'], [10, 'Playmaker'], [6, 'Starter'], [3, 'Prospect'], [1, 'Rookie'],
+];
+
+/** Level, rank and progress towards the next level for a total XP. */
+export function levelFor(xp) {
+  let level = 1, left = xp;
+  while (left >= xpStep(level)) {
+    left -= xpStep(level);
+    level++;
+  }
+  return { level, xp: left, next: xpStep(level), rank: RANKS.find(([min]) => level >= min)[1] };
+}
 
 export class Progress {
   constructor() {
     this.data = DEFAULTS();
     try {
       const saved = JSON.parse(localStorage.getItem(KEY));
-      if (saved) this.data = { ...DEFAULTS(), ...saved, daily: { ...DEFAULTS().daily, ...saved.daily } };
+      if (saved) {
+        this.data = {
+          ...DEFAULTS(), ...saved,
+          daily: { ...DEFAULTS().daily, ...saved.daily },
+          career: { ...DEFAULTS().career, ...saved.career },
+        };
+      }
       const legacy = JSON.parse(localStorage.getItem(LEGACY_BEST_KEY));
       if (legacy) {
         for (const [mode, score] of Object.entries(legacy)) {
@@ -92,6 +117,87 @@ export class Progress {
       this.save();
     }
     return isNew;
+  }
+
+  /** Highest score in any mode, including any Daily Challenge. */
+  get bestScore() {
+    let best = 0, mode = null;
+    for (const [m, s] of Object.entries(this.data.bests)) {
+      if (Number(m) === 4) continue; // Practice runs are endless, so they don't count
+      if (s > best) { best = s; mode = Number(m); }
+    }
+    for (const s of Object.values(this.data.daily.best)) if (s > best) { best = s; mode = 3; }
+    return { score: best, mode };
+  }
+
+  // ---------------------------------------------------------------- career
+  /** Lifetime stats and XP, updated after every resolved shot. */
+  recordShot({ goal, base = 0, streak = 0 }) {
+    const c = this.data.career;
+    c.shots++;
+    if (goal) {
+      c.goals++;
+      if (base === 9) c.topCorners++;
+      c.bestStreak = Math.max(c.bestStreak, streak);
+      c.xp += base * 10 + Math.min(streak, 10) * 5;
+    } else {
+      c.xp += 2;
+    }
+    this.save();
+  }
+
+  recordGame({ perfects = 0, woodwork = 0, seconds = 0 } = {}) {
+    const c = this.data.career;
+    c.games++;
+    c.xp += 25;
+    c.perfects += perfects;
+    c.bestPerfects = Math.max(c.bestPerfects, perfects);
+    c.bestWoodwork = Math.max(c.bestWoodwork, woodwork);
+    c.seconds += Math.max(0, Math.round(seconds));
+    this.save();
+  }
+
+  /** Per-mode games played and best goal streak. */
+  modeStats(mode) {
+    return { games: 0, bestStreak: 0, ...this.data.modes?.[mode] };
+  }
+
+  recordModeRun(mode, streak) {
+    this.data.modes ??= {};
+    const m = this.modeStats(mode);
+    m.games++;
+    m.bestStreak = Math.max(m.bestStreak, streak);
+    this.data.modes[mode] = m;
+    this.save();
+  }
+
+  get dailyDoneToday() {
+    return this.data.daily.lastDate === dateKey();
+  }
+
+  /** Unlock time (ms) of an achievement, or null. */
+  unlockedAt(id) {
+    const t = this.data.achievements[id];
+    return typeof t === 'number' ? t : null;
+  }
+
+  /** Timestamp of the last Trophy Room visit; unlocks after it count as new. */
+  get trophySeen() {
+    return this.data.trophySeen ?? 0;
+  }
+
+  markTrophiesSeen() {
+    this.data.trophySeen = Date.now();
+    this.save();
+  }
+
+  get bossCount() {
+    return this.data.bosses.length;
+  }
+
+  get career() {
+    const c = this.data.career;
+    return { ...c, accuracy: c.shots ? Math.round((c.goals / c.shots) * 100) : 0, ...levelFor(c.xp), totalXp: c.xp };
   }
 
   // ---------------------------------------------------------------- daily

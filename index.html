@@ -7,7 +7,7 @@
   <meta name="description" content="Free kick challenge in 3D: beat the wall and the keeper, aim for the top corners.">
   <!-- Installable app (PWA) -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#070b14">
+  <meta name="theme-color" content="#060b17">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,9 +17,11 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Bebas+Neue&family=Big+Shoulders+Display:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/features.css">
+  <link rel="stylesheet" href="css/menu.css">
+  <link rel="stylesheet" href="css/hub.css">
   <script type="importmap">
     {
       "imports": {
@@ -126,34 +128,109 @@
 
     <!-- Main menu (python STATE_MENU) -->
     <section id="screen-menu" class="screen">
-      <div class="menu-card">
-        <div class="eyebrow">Free kick challenge</div>
-        <h1 class="title">Football <span>Mania</span></h1>
-        <p class="lead">Bend it round the wall, beat the keeper and pick out the top corners.</p>
-        <div class="actions">
-          <button class="btn primary" id="btn-play">Play</button>
-          <button class="btn ghost" id="btn-menu-help">How to play</button>
-          <button class="btn ghost" id="btn-trophies">Trophies <span class="count" id="trophy-count">0/0</span></button>
-          <button class="btn ghost hidden" id="btn-install" title="Install Football Mania as an app">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v9.6l3.3-3.3 1.4 1.4L12 16.4l-5.7-5.7 1.4-1.4 3.3 3.3zM5 19h14v2H5z"/></svg>
-            Install app
+      <div class="menu-shade" aria-hidden="true"></div>
+
+      <header class="menu-top">
+        <button class="profile-chip reveal" id="btn-profile" style="--d: 0.55s" aria-label="Open career">
+          <span class="lvl-ring" id="profile-ring"><b id="profile-level">1</b></span>
+          <span class="profile-text"><b>Player One</b><small id="profile-rank">Rookie</small></span>
+        </button>
+        <button class="glass-icon reveal" id="btn-menu-sound" style="--d: 0.6s" title="Sound (M)" aria-label="Toggle sound">
+          <svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="i-wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="i-mute" d="M16 9l5 6M21 9l-5 6"/></svg>
+        </button>
+      </header>
+
+      <div class="hero">
+        <div class="eyebrow reveal" style="--d: 0.05s"><i></i>Free kick challenge</div>
+        <h1 class="title reveal" style="--d: 0.12s"><span class="t1">Football</span><span class="t2">Mania</span></h1>
+        <p class="tagline reveal" style="--d: 0.2s">Master every curve.</p>
+        <p class="lead reveal" style="--d: 0.26s">Bend it round the wall, beat the keeper and pick out the top corners.</p>
+
+        <nav class="menu-nav" aria-label="Main menu">
+          <button class="btn-play reveal" id="btn-play" style="--d: 0.32s">
+            <span class="play-text"><b>Play</b><small>Choose a game mode</small></span>
+            <span class="play-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </button>
+
+          <div class="nav-list">
+            <button class="nav-item reveal" id="btn-career" style="--d: 0.38s">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg>
+              <span>Career</span><em id="meta-career">Lv 1</em>
+            </button>
+            <button class="nav-item reveal" id="btn-daily" style="--d: 0.42s">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3v5M16 3v5"/><path d="M8.5 14h2M13.5 14h2M8.5 17h2"/></svg>
+              <span>Daily Challenge</span><em id="meta-daily" class="live">New today</em>
+            </button>
+            <button class="nav-item reveal" id="btn-practice" style="--d: 0.46s">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+              <span>Practice</span><em>Unlimited kicks</em>
+            </button>
+            <button class="nav-item reveal" id="btn-trophies" style="--d: 0.5s">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M9.5 17h5"/></svg>
+              <span>Achievements</span><em id="trophy-count">0/0</em>
+            </button>
+          </div>
+
+          <div class="nav-row reveal" style="--d: 0.54s">
+            <button class="nav-item compact" id="btn-settings">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+              <span>Settings</span>
+            </button>
+            <button class="nav-item compact hidden" id="btn-install" title="Install Football Mania as an app">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+              <span>Install app</span>
+            </button>
+          </div>
+          <p class="install-hint hidden" id="install-hint">On iPhone or iPad: tap <b>Share</b>, then <b>Add to Home Screen</b> to install.</p>
+        </nav>
+      </div>
+
+      <div class="stat-strip" aria-label="Your stats">
+        <div class="stat-card reveal" style="--d: 0.6s">
+          <div class="stat-head"><span>Best score</span><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></div>
+          <b class="stat-value" id="stat-best">0</b>
+          <small id="stat-best-mode">No games yet</small>
         </div>
-        <p class="install-hint hidden" id="install-hint">On iPhone or iPad: tap <b>Share</b>, then <b>Add to Home Screen</b> to install.</p>
-        <div class="zones-legend">
-          <span><i class="dot gold"></i>Top corners · 9</span>
-          <span><i class="dot blue"></i>Bottom corners · 5</span>
-          <span><i class="dot white"></i>Anywhere else · 3</span>
+        <div class="stat-card reveal" style="--d: 0.66s">
+          <div class="stat-head"><span>Accuracy</span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/></svg></div>
+          <b class="stat-value"><span id="stat-acc">0</span><i>%</i></b>
+          <div class="stat-bar"><i id="stat-acc-bar"></i></div>
+          <small id="stat-acc-sub">0 of 0 shots</small>
+        </div>
+        <div class="stat-card gold reveal" style="--d: 0.72s">
+          <div class="stat-head"><span>Top corners</span><svg viewBox="0 0 24 24"><path d="M3 20V5h18v15"/><path d="M15 5h6v6" fill="currentColor"/></svg></div>
+          <b class="stat-value" id="stat-tc">0</b>
+          <small>9 points each</small>
+        </div>
+        <div class="stat-card lime reveal" style="--d: 0.78s">
+          <div class="stat-head"><span>Best combo</span><svg viewBox="0 0 24 24"><path d="M13 2L5 14h6l-1 8 8-12h-6z"/></svg></div>
+          <b class="stat-value"><i>×</i><span id="stat-combo">0</span></b>
+          <small>Goals in a row</small>
+        </div>
+        <div class="stat-card level reveal" style="--d: 0.84s">
+          <div class="stat-head"><span>Player level</span><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7z"/></svg></div>
+          <b class="stat-value"><span id="stat-level">1</span><em id="stat-rank">Rookie</em></b>
+          <div class="stat-bar"><i id="stat-xp-bar"></i></div>
+          <small id="stat-xp">0 / 200 XP</small>
         </div>
       </div>
+
+      <footer class="menu-foot reveal" style="--d: 0.9s"><span><kbd class="key sm">Enter</kbd> Play</span><span><kbd class="key sm">H</kbd> How to play</span></footer>
     </section>
 
     <!-- Mode select (python STATE_MODE_SELECT) -->
-    <section id="screen-modes" class="screen hidden">
-      <div class="modes-wrap">
-        <h2 class="screen-title">Choose a mode</h2>
+    <section id="screen-modes" class="screen hub hidden">
+      <div class="hub-fx" aria-hidden="true"><i class="sweep a"></i><i class="sweep b"></i><i class="ray"></i><div class="motes" id="mode-motes"></div></div>
+      <div class="hub-wrap modes-wrap">
+        <header class="hub-header modes-header">
+          <button class="back-btn" id="btn-modes-back" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span>Back</span></button>
+          <div>
+            <div class="eyebrow">Play</div>
+            <h2 class="hub-title">Choose your challenge</h2>
+            <p class="hub-sub">Select a mode and prove your free-kick mastery.</p>
+          </div>
+        </header>
         <div class="mode-grid" id="mode-grid"></div>
-        <button class="btn ghost small" id="btn-modes-back">Back</button>
       </div>
     </section>
 
@@ -190,45 +267,227 @@
       </div>
     </section>
 
-    <section id="screen-trophies" class="screen hidden">
-      <div class="dialog wide trophies">
-        <h2 class="screen-title">Trophy room</h2>
-        <div class="trophy-section">
-          <div class="label">Achievements <span id="ach-count"></span></div>
-          <div class="ach-grid" id="ach-grid"></div>
+    <!-- Career -->
+    <section id="screen-career" class="screen hidden">
+      <div class="dialog wide career">
+        <div class="eyebrow">Career</div>
+        <h2 class="screen-title sm">Your journey</h2>
+        <div class="career-head">
+          <div class="big-ring" id="career-ring"><b id="career-level">1</b><small>Level</small></div>
+          <div class="career-rank">
+            <b id="career-rank">Rookie</b>
+            <div class="stat-bar"><i id="career-xp-bar"></i></div>
+            <small id="career-xp">0 / 200 XP to next level</small>
+          </div>
         </div>
-        <div class="trophy-section">
-          <div class="label">Sticker album <span id="sticker-count"></span></div>
-          <p class="hint-text">Golden stars sometimes appear inside the goal. Put the ball through one to collect a sticker.</p>
-          <div class="sticker-grid" id="sticker-grid"></div>
-        </div>
-        <button class="btn primary" id="btn-trophies-close">Back</button>
+        <div class="career-grid" id="career-grid"></div>
+        <div class="label section-label">Mode records</div>
+        <div class="records" id="career-records"></div>
+        <button class="btn primary" id="btn-career-close">Back</button>
       </div>
     </section>
 
-    <section id="screen-help" class="screen hidden">
-      <div class="dialog wide">
-        <h2 class="screen-title">How to play</h2>
-        <div class="help-grid">
-          <div><kbd>Mouse</kbd> / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div><div>Move the target marker</div>
-          <div>Hold <kbd>Left click</kbd> / <kbd>Space</kbd></div><div>Charge power, release to shoot</div>
-          <div><kbd>Q</kbd> <kbd>E</kbd> / <kbd>Wheel</kbd></div><div>Curve the ball left / right</div>
-          <div><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></div><div>Rotate the camera</div>
-          <div><kbd>Right click</kbd> / <kbd>C</kbd></div><div>Switch point of view</div>
-          <div><kbd>P</kbd> / <kbd>Esc</kbd></div><div>Pause / resume</div>
-          <div><kbd>F</kbd></div><div>Use your power-up</div>
-          <div><kbd>M</kbd></div><div>Mute sound</div>
-          <div><kbd>Gamepad</kbd></div><div>Left stick aim · RT/A shoot · LB/RB curve · X power-up</div>
+    <!-- Settings -->
+    <section id="screen-settings" class="screen hidden">
+      <div class="dialog settings">
+        <div class="eyebrow">Options</div>
+        <h2 class="screen-title sm">Settings</h2>
+        <div class="setting-row">
+          <div><b>Sound</b><small>Crowd, kicks and whistles</small></div>
+          <div class="seg" data-setting="sound"><button data-value="on">On</button><button data-value="off">Off</button></div>
         </div>
-        <ul class="tips">
-          <li><b>Perfect Strike:</b> release inside the green band on the power bar for a shot with no scatter that the keeper reads later.</li>
-          <li><b>Low power</b> lobs over the wall but gives the keeper time; <b>high power</b> is hard to save, but above the red line accuracy drops.</li>
-          <li><b>Curve</b> bends the ball around the wall and still lands on your marker. <b>Wind</b> pushes it while it's in the air.</li>
-          <li><b>Streaks</b> multiply points (×1.5 from 3 in a row, ×2 from 5) and earn <b>power-ups</b>.</li>
-          <li>Every 5 goals a <b>boss keeper</b> steps in. Beat them for a bonus and a power-up.</li>
-          <li>Three misses and it's game over. Hitting the post won't save you.</li>
-        </ul>
-        <button class="btn primary" id="btn-help-close">Got it</button>
+        <div class="setting-row">
+          <div><b>Graphics</b><small>Bloom, ambient occlusion, depth of field</small></div>
+          <div class="seg" data-setting="graphics"><button data-value="low">Low</button><button data-value="medium">Med</button><button data-value="high">High</button></div>
+        </div>
+        <div class="setting-row">
+          <div><b>Camera</b><small>Starting point of view</small></div>
+          <div class="seg" data-setting="camera"><button data-value="broadcast">3rd</button><button data-value="first">1st</button></div>
+        </div>
+        <div class="setting-row">
+          <div><b>Camera motion</b><small>Menu drift and crowd wave</small></div>
+          <div class="seg" data-setting="motion"><button data-value="on">On</button><button data-value="off">Off</button></div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" id="btn-menu-help">How to play</button>
+          <button class="btn primary" id="btn-settings-close">Done</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trophy Room -->
+    <section id="screen-trophies" class="screen hub hidden">
+      <div class="hub-fx" aria-hidden="true"><i class="sweep a"></i><i class="sweep b"></i><div class="motes" id="trophy-motes"></div></div>
+      <div class="hub-wrap trophies">
+        <header class="hub-header">
+          <button class="back-link" id="btn-trophies-back" aria-label="Back to menu"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Back</button>
+          <div>
+            <div class="eyebrow">Trophy Room</div>
+            <h2 class="hub-title">Achievements</h2>
+            <p class="hub-sub">Complete challenges, unlock rewards and build your legacy.</p>
+          </div>
+        </header>
+
+        <div class="trophy-top">
+          <div class="completion glass">
+            <div class="comp-ring" id="comp-ring"><b id="comp-pct">0%</b><small>Complete</small></div>
+            <div class="comp-info">
+              <div class="comp-count"><b id="ach-count">0</b><span id="ach-total">/ 0 unlocked</span></div>
+              <div class="comp-rank"><span class="label">Rank</span><b id="comp-rank">Amateur</b></div>
+              <div class="comp-next" id="comp-next"></div>
+              <div class="rarity-split" id="rarity-split"></div>
+            </div>
+          </div>
+          <div class="featured" id="featured"></div>
+        </div>
+
+        <div class="trophy-stats" id="trophy-stats"></div>
+
+        <div class="trophy-controls">
+          <div class="filters" id="ach-filters" role="tablist" aria-label="Filter achievements"></div>
+          <div class="trophy-tools">
+            <label class="search glass"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><input id="ach-search" type="search" placeholder="Search achievements" autocomplete="off"></label>
+            <label class="sort glass"><span class="sr-only">Sort</span><select id="ach-sort">
+              <option value="default">Default order</option>
+              <option value="recent">Recently unlocked</option>
+              <option value="rarity">Rarity</option>
+              <option value="progress">Closest to unlock</option>
+            </select></label>
+          </div>
+        </div>
+
+        <div class="ach-grid" id="ach-grid"></div>
+        <p class="ach-empty hidden" id="ach-empty">No achievements match. Try another filter.</p>
+
+        <section class="album">
+          <div class="album-head">
+            <div><h3>Sticker album</h3><p>Golden stars sometimes appear inside the goal. Put the ball through one to collect a sticker.</p></div>
+            <b class="album-count" id="sticker-count"></b>
+          </div>
+          <div class="sticker-grid" id="sticker-grid"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- How to play -->
+    <section id="screen-help" class="screen hub hidden">
+      <div class="hub-wrap help">
+        <header class="hub-header">
+          <button class="back-link" id="btn-help-back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Back</button>
+          <div>
+            <div class="eyebrow">Tutorial</div>
+            <h2 class="hub-title">How to play</h2>
+            <p class="hub-sub">Master the basics before stepping onto the pitch.</p>
+          </div>
+        </header>
+
+        <div class="help-layout">
+          <div class="control-cards">
+            <article class="ctl-card" style="--i: 0">
+              <header><span class="ctl-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span><h3>Movement</h3></header>
+              <div class="ctl-row"><div class="keys"><kbd class="key mouse"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v6"/></svg>Mouse</kbd><i>or</i><kbd class="key">W</kbd><kbd class="key">A</kbd><kbd class="key">S</kbd><kbd class="key">D</kbd></div><p>Move the target marker</p></div>
+            </article>
+            <article class="ctl-card" style="--i: 1">
+              <header><span class="ctl-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg></span><h3>Shooting</h3></header>
+              <div class="ctl-row"><div class="keys"><span class="hold">Hold</span><kbd class="key mouse"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v6"/><path class="lit" d="M12 3.2a5.8 5.8 0 0 0-5.8 5.8H12z"/></svg>Left</kbd><i>or</i><kbd class="key wide">Space</kbd></div><p>Charge power, release to shoot</p></div>
+            </article>
+            <article class="ctl-card" style="--i: 2">
+              <header><span class="ctl-icon blue"><svg viewBox="0 0 24 24"><path d="M5 20C7 11 12 6 19 5"/><circle cx="19" cy="5" r="2"/></svg></span><h3>Ball curve</h3></header>
+              <div class="ctl-row"><div class="keys"><kbd class="key">Q</kbd><kbd class="key">E</kbd><i>or</i><kbd class="key mouse"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path class="lit" d="M12 6v4" stroke-width="2.5"/></svg>Wheel</kbd></div><p>Bend the ball left or right</p></div>
+            </article>
+            <article class="ctl-card" style="--i: 3">
+              <header><span class="ctl-icon"><svg viewBox="0 0 24 24"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><h3>Camera</h3></header>
+              <div class="ctl-row"><div class="keys arrows"><kbd class="key">←</kbd><kbd class="key">↑</kbd><kbd class="key">↓</kbd><kbd class="key">→</kbd></div><p>Rotate the camera</p></div>
+              <div class="ctl-row"><div class="keys"><kbd class="key mouse"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v6"/><path class="lit" d="M12 3.2a5.8 5.8 0 0 1 5.8 5.8H12z"/></svg>Right</kbd><i>or</i><kbd class="key">C</kbd></div><p>Switch point of view</p></div>
+            </article>
+            <article class="ctl-card" style="--i: 4">
+              <header><span class="ctl-icon gold"><svg viewBox="0 0 24 24"><path d="M13 2L5 14h6l-1 8 8-12h-6z"/></svg></span><h3>Power-ups</h3></header>
+              <div class="ctl-row"><div class="keys"><kbd class="key">F</kbd></div><p>Use your power-up. Earn them with streaks and boss wins.</p></div>
+            </article>
+            <article class="ctl-card" style="--i: 5">
+              <header><span class="ctl-icon"><svg viewBox="0 0 24 24"><path d="M3 20V5h18v15M3 12h18M12 5v15"/></svg></span><h3>Game rules</h3></header>
+              <ul class="zones">
+                <li><i class="dot gold"></i>Top corners<b>9</b></li>
+                <li><i class="dot blue"></i>Bottom corners<b>5</b></li>
+                <li><i class="dot white"></i>Anywhere else<b>3</b></li>
+              </ul>
+            </article>
+            <div class="sys-row" style="--i: 6">
+              <span><kbd class="key sm">P</kbd><kbd class="key sm">Esc</kbd>Pause</span>
+              <span><kbd class="key sm">M</kbd>Mute</span>
+              <span><kbd class="key sm">H</kbd>Help</span>
+              <span class="pad"><svg viewBox="0 0 24 24"><path d="M7 8h10a4 4 0 0 1 4 4.5l-.6 4a2.5 2.5 0 0 1-4.4 1.1L14.5 16h-5L8 17.6a2.5 2.5 0 0 1-4.4-1.1l-.6-4A4 4 0 0 1 7 8z"/></svg>Left stick aim · RT/A shoot · LB/RB curve · X power-up</span>
+            </div>
+          </div>
+
+          <div class="help-side">
+            <figure class="pitch-preview glass" aria-label="Animated diagram: aim at the top corner, charge power into the green band, and curve the ball around the wall past the keeper">
+              <svg viewBox="0 0 400 300" class="pv">
+                <defs>
+                  <pattern id="pv-net" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M0 0h10M0 0v10" stroke="rgba(255,255,255,.14)" stroke-width="1"/></pattern>
+                  <linearGradient id="pv-grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173a24"/><stop offset="1" stop-color="#0d2416"/></linearGradient>
+                  <radialGradient id="pv-glow"><stop offset="0" stop-color="#c6ff3d" stop-opacity=".55"/><stop offset="1" stop-color="#c6ff3d" stop-opacity="0"/></radialGradient>
+                </defs>
+                <rect width="400" height="300" fill="url(#pv-grass)"/>
+                <path d="M0 210h400M0 150h400" stroke="rgba(255,255,255,.04)" stroke-width="30"/>
+                <path d="M30 118h340" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+                <!-- goal -->
+                <rect x="110" y="40" width="180" height="78" fill="url(#pv-net)"/>
+                <rect class="pv-zone" x="110" y="40" width="45" height="30" fill="rgba(242,193,78,.18)"/>
+                <rect class="pv-zone" x="245" y="40" width="45" height="30" fill="rgba(242,193,78,.18)"/>
+                <path d="M110 118V40h180v78" fill="none" stroke="#f5f7fb" stroke-width="4" stroke-linejoin="round"/>
+                <!-- keeper -->
+                <g class="pv-keeper"><rect x="192" y="80" width="16" height="26" rx="5" fill="#ff7a1a"/><circle cx="200" cy="74" r="6" fill="#e0ac7e"/><path d="M192 86l-12-8M208 86l12-8" stroke="#ff7a1a" stroke-width="5" stroke-linecap="round"/></g>
+                <!-- wall -->
+                <g class="pv-wall">
+                  <g><rect x="166" y="150" width="14" height="26" rx="5" fill="#2a4fa8"/><circle cx="173" cy="145" r="6" fill="#e0ac7e"/></g>
+                  <g><rect x="183" y="150" width="14" height="26" rx="5" fill="#2a4fa8"/><circle cx="190" cy="145" r="6" fill="#a86f4c"/></g>
+                  <g><rect x="200" y="150" width="14" height="26" rx="5" fill="#2a4fa8"/><circle cx="207" cy="145" r="6" fill="#ffd2b3"/></g>
+                  <g><rect x="217" y="150" width="14" height="26" rx="5" fill="#2a4fa8"/><circle cx="224" cy="145" r="6" fill="#6b4430"/></g>
+                </g>
+                <!-- target -->
+                <circle cx="268" cy="54" r="22" fill="url(#pv-glow)" class="pv-target-glow"/>
+                <g class="pv-target"><circle cx="268" cy="54" r="10" fill="none" stroke="#c6ff3d" stroke-width="2"/><path d="M268 40v7M268 61v7M254 54h7M275 54h7" stroke="#c6ff3d" stroke-width="2"/></g>
+                <!-- curve path -->
+                <path id="pv-path" class="pv-path" d="M200 262C110 220 120 120 268 54" fill="none" stroke="#c6ff3d" stroke-width="2" stroke-dasharray="5 7"/>
+                <path class="pv-curve-arrow" d="M128 182l-8 6 10 2" fill="none" stroke="#4fc3ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- ball -->
+                <g class="pv-ball">
+                  <circle r="8" fill="#fff"/><path d="M0-3.5l3.3 2.4-1.3 3.9h-4l-1.3-3.9z" fill="#111"/>
+                  <animateMotion dur="3.6s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;0.42;0.78;1" calcMode="linear"><mpath href="#pv-path"/></animateMotion>
+                  <animateTransform attributeName="transform" type="scale" additive="sum" values="1;1;0.55;0.55" keyTimes="0;0.42;0.78;1" dur="3.6s" repeatCount="indefinite"/>
+                </g>
+                <!-- labels -->
+                <g class="pv-labels">
+                  <text x="300" y="34">AIM</text>
+                  <text x="236" y="168">WALL</text>
+                  <text x="214" y="92">KEEPER</text>
+                  <text x="62" y="196" fill="#4fc3ff">CURVE</text>
+                </g>
+                <!-- power bar -->
+                <g transform="translate(120 280)">
+                  <rect width="160" height="8" rx="4" fill="rgba(255,255,255,.12)"/>
+                  <rect x="88" y="-2" width="16" height="12" rx="3" fill="rgba(94,227,122,.35)" stroke="#5ee37a"/>
+                  <rect class="pv-power" width="160" height="8" rx="4" fill="#c6ff3d"/>
+                  <text x="-12" y="8" text-anchor="end">POWER</text>
+                </g>
+              </svg>
+              <figcaption><span class="step"><b>1</b>Aim</span><span class="step"><b>2</b>Power</span><span class="step"><b>3</b>Curve</span></figcaption>
+            </figure>
+
+            <div class="tip-cards">
+              <div class="tip green" style="--i: 0"><span class="tip-icon"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></span><div><b>Perfect Strike</b><p>Release inside the green band: zero scatter, harder to read.</p></div></div>
+              <div class="tip blue" style="--i: 1"><span class="tip-icon"><svg viewBox="0 0 24 24"><path d="M5 20C7 11 12 6 19 5"/><circle cx="19" cy="5" r="2"/></svg></span><div><b>Ball curve</b><p>Bend round the wall and still land on your marker. Wind pushes it in flight.</p></div></div>
+              <div class="tip orange" style="--i: 2"><span class="tip-icon"><svg viewBox="0 0 24 24"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 2 1.3 3 2.5 3 0-3-1-5.5 0-8z"/></svg></span><div><b>Combo &amp; streaks</b><p>×1.5 from 3 in a row, ×2 from 5. Streaks earn power-ups.</p></div></div>
+              <div class="tip red" style="--i: 3"><span class="tip-icon"><svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg></span><div><b>Boss keeper</b><p>Every 5 goals a boss steps in. Beat them for a bonus.</p></div></div>
+              <div class="tip gray" style="--i: 4"><span class="tip-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span><div><b>Three lives</b><p>Three misses and it's full time. The post won't save you.</p></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-cta">
+          <button class="btn-cta" id="btn-help-close"><span id="help-cta-label">Enter the pitch</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
       </div>
     </section>
 

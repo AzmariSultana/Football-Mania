@@ -23,6 +23,7 @@ export const MODE = {
   GOALPOST_REDUCTION: 1,
   TIME_REDUCTION: 2,
   DAILY: 3,
+  PRACTICE: 4,
 };
 
 export const MODE_INFO = [
@@ -49,6 +50,12 @@ export const MODE_INFO = [
     name: 'Daily Challenge',
     tag: 'New every day',
     desc: 'Ten fixed free kicks, the same for everyone today. Wind, two bosses and no miss limit.',
+  },
+  {
+    id: MODE.PRACTICE,
+    name: 'Practice',
+    tag: 'No pressure',
+    desc: 'Unlimited free kicks against a normal keeper. Work on your curve and power.',
   },
 ];
 

@@ -66,11 +66,21 @@ export class CameraRig {
       posK = 1.2;
       lookK = 7;
     } else if (ctx.phase === 'menu') {
-      this.menuAngle += dt * 0.08;
-      const r = 1250;
-      _desired.set(Math.sin(this.menuAngle) * r, 420 + Math.sin(this.menuAngle * 0.7) * 80, 350 + Math.cos(this.menuAngle) * r);
-      _look.set(0, 40, 250);
-      posK = lookK = 1.5;
+      // Low broadcast angle from the touchline, drifting slowly like a crane camera.
+      // The action is framed right of centre to leave room for the menu.
+      const m = this.motion === false ? 0 : 1;
+      const t = (this.menuAngle += dt * m);
+      _desired.set(
+        520 + Math.sin(t * 0.06) * 120 * m,
+        100 + Math.sin(t * 0.09) * 18 * m,
+        1020 + Math.cos(t * 0.06) * 90 * m,
+      );
+      _look.set(
+        -190 + Math.sin(t * 0.045) * 40 * m + Math.sin(t * 0.7) * 1.5 * m,
+        96 + Math.sin(t * 0.53) * 1.2 * m,
+        300,
+      );
+      posK = lookK = 1.1;
     } else if (this.mode === CAM_FIRST_PERSON) {
       _desired.copy(ctx.eye);
       if (ctx.phase === 'aim') _look.lerpVectors(ctx.marker, GOAL_FOCUS, 0.45);

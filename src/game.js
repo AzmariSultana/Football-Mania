@@ -16,10 +16,11 @@ import { DefensiveWall } from './entities/wall.js';
 import { setBigHead } from './entities/characters.js';
 import { Particles } from './fx/particles.js';
 import { AudioFX } from './audio.js';
-import { CameraRig, CAM_FIRST_PERSON } from './camera.js';
+import { CameraRig, CAM_FIRST_PERSON, CAM_ORBIT } from './camera.js';
 import { Input, PAD } from './input.js';
 import { UI } from './ui.js';
 import { Progress, ACHIEVEMENTS, STICKERS } from './progress.js';
+import { Settings } from './settings.js';
 import { BOSSES } from './features/bosses.js';
 import { POWERUPS, POWERUP_IDS, POWERUP_STREAKS } from './features/powerups.js';
 import { Replay } from './features/replay.js';
@@ -80,6 +81,7 @@ export class Game {
     this.audio = new AudioFX();
     this.rig = new CameraRig(camera);
     this.progress = new Progress();
+    this.settings = new Settings();
     this.raycaster = new THREE.Raycaster();
     this.goalPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     this.createMarker();
@@ -133,7 +135,14 @@ export class Game {
       onPowerup: () => this.activatePowerup(),
       onCurve: (dir) => this.adjustCurve(dir),
       onTrophies: () => this.ui.showTrophies(this.progress),
+      onCareer: () => this.ui.showCareer(this.progress),
+      onDaily: () => this.startMode(MODE.DAILY),
+      onPractice: () => this.startMode(MODE.PRACTICE),
+      onSetting: (key, value) => this.settings.set(key, value),
+      settings: this.settings,
     });
+    this.settings.onChange((key) => this.applySettings(key));
+    this.applySettings();
     this.refreshMenu();
     this.ui.setMuted(this.audio.muted);
     this.ui.setHud(false);
@@ -198,6 +207,29 @@ export class Game {
   refreshMenu() {
     this.ui.setBest(this.progress.bestsMap(), this.progress.dailyStreak);
     this.ui.setTrophyCount(this.progress.unlockedCount, ACHIEVEMENTS.length);
+    this.ui.setMenuStats(this.progress, this.progress.dailyStreak);
+  }
+
+  /** Apply stored settings (all of them, or the one that changed). */
+  applySettings(key = null) {
+    const s = this.settings;
+    if (!key || key === 'motion') {
+      const on = s.get('motion') === 'on';
+      this.rig.motion = on;
+      this.stadium.motion = on;
+    }
+    if (!key || key === 'camera') this.rig.mode = s.get('camera') === 'first' ? CAM_FIRST_PERSON : CAM_ORBIT;
+    if (!key || key === 'graphics') this.onGraphics?.(s.get('graphics'));
+    this.ui.syncSettings(s);
+  }
+
+  get isPractice() {
+    return this.mode === MODE.PRACTICE;
+  }
+
+  /** What the menu's depth of field focuses on: the free-kick taker. */
+  get focusPoint() {
+    return this.spot;
   }
 
   get isDaily() {
@@ -220,6 +252,8 @@ export class Game {
     this.ui.setHud(true);
     this.ui.setMode(MODE_INFO[mode].name);
     this.stadium.cycleTime = 0;
+    this.runStart = this.time;
+    this.applySettings('camera'); // every run starts from the chosen point of view
     this.resetRun();
     this.audio.unlock();
     this.audio.whistle();
@@ -235,7 +269,18 @@ export class Game {
     }, delay);
   }
 
+  /** Add the finished (or abandoned) run to the lifetime stats. */
+  recordRun() {
+    if (this.kick === 0 || this.runRecorded === this.runId) return;
+    this.runRecorded = this.runId;
+    this.progress.recordModeRun(this.mode, this.bestStreak);
+    this.progress.recordGame({
+      perfects: this.stats.perfects, woodwork: this.stats.woodwork, seconds: this.time - (this.runStart ?? this.time),
+    });
+  }
+
   toMenu() {
+    if (this.state === STATE.PLAYING) this.recordRun();
     unseedRandom();
     this.state = STATE.MENU;
     this.paused = false;
@@ -280,6 +325,7 @@ export class Game {
     this.ui.setScore(0);
     this.ui.setMisses(0);
     this.ui.setKicks(this.isDaily && this.state === STATE.PLAYING ? 1 : null, DAILY.kicks);
+    this.ui.setMissesVisible(!this.isDaily && !this.isPractice);
     this.ui.setCurve(0);
     this.ui.setMultiplier(1);
     this.ui.setPowerup(null, 'empty');
@@ -310,7 +356,8 @@ export class Game {
     this.keeper.setSize(this.keeperWidth * bossScale, this.keeperHeight * bossScale);
     this.keeper.setShirt(this.boss?.shirt ?? this.keeperKit);
 
-    for (let i = 0; i < 60; i++) {
+    // The main menu always shows the same composed shot: a central free kick, 25 m out.
+    for (let i = 0; i < 60 && this.state !== STATE.MENU; i++) {
       const x = rand(-SPAWN.maxX, SPAWN.maxX);
       const z = rand(SPAWN.minZ, SPAWN.maxZ);
       if (Math.atan2(Math.abs(x), z) <= SPAWN.maxAngle) {
@@ -318,6 +365,7 @@ export class Game {
         break;
       }
     }
+    if (this.state === STATE.MENU) this.spot.set(170, 0, 480);
     this.ball.place(this.spot.x, this.spot.z);
     this.ball.setGolden(false);
     this.kicker.place(this.ball.position, _v.set(0, 0, 0));
@@ -382,6 +430,8 @@ export class Game {
   updateInfo() {
     if (this.isDaily) {
       this.ui.setInfo(`Daily · ${dateKey(this.dailyDate)}`);
+    } else if (this.isPractice) {
+      this.ui.setInfo('Unlimited kicks');
     } else if (this.mode === MODE.KEEPER_POWER) {
       this.ui.setInfo(`Keeper size ${Math.round((this.keeperHeight / KEEPER.height) * 100)}%`);
     } else if (this.mode === MODE.GOALPOST_REDUCTION) {
@@ -469,6 +519,7 @@ export class Game {
       best = this.progress.best(this.mode);
     }
     unseedRandom();
+    this.recordRun();
 
     this.ui.setHud(false);
     this.ui.clearBanner();
@@ -510,7 +561,7 @@ export class Game {
     this.audio.unlock();
     this.checkKonami(code);
     if (code === 'Escape' && this.ui.current === 'help') {
-      this.ui.closeHelp();
+      this.ui.closeHelp(true);
       return;
     }
     if (this.phase === 'replay' && (code === 'Space' || code === 'Enter')) {
@@ -917,6 +968,7 @@ export class Game {
     this.bestStreak = Math.max(this.bestStreak, this.streak);
 
     const base = getGoalPoints(x, y, this.goalWidth, this.goal.height);
+    this.progress.recordShot({ goal: true, base, streak: this.streak });
     const mult = multiplierFor(this.streak);
     let pts = Math.round(base * mult);
     if (s.powerup === 'golden') pts *= 2;
@@ -986,8 +1038,9 @@ export class Game {
     if (this.mode === MODE.TIME_REDUCTION && s.clockLeft < 3) this.achieve('ice_cold');
     if (this.stadium.isNight) this.achieve('night_owl');
     if (this.windStrength >= 0.6) this.achieve('storm');
-    if (this.score >= 50) this.achieve('half_century');
-    if (this.score >= 100) this.achieve('centurion');
+    // Practice has no miss limit, so score milestones only count in real modes.
+    if (!this.isPractice && this.score >= 50) this.achieve('half_century');
+    if (!this.isPractice && this.score >= 100) this.achieve('centurion');
 
     // Slow-motion replay for the special ones.
     this.replayWanted = this.replayWanted || base === 9 || s.perfect || !!s.boss || !!s.touched
@@ -1001,6 +1054,7 @@ export class Game {
     this.missed++;
     this.streak = 0;
     this.charging = false;
+    this.progress.recordShot({ goal: false });
     this.replayWanted = false;
     const [title, subs] = MISS_TEXT[reason] || MISS_TEXT.short;
     let detail = pick(subs);
@@ -1011,6 +1065,7 @@ export class Game {
     const left = RULES.maxMiss - this.missed;
     const tail = this.isDaily
       ? `Kick ${this.kick} / ${DAILY.kicks}`
+      : this.isPractice ? 'Go again'
       : (left > 0 ? `${left} ${left === 1 ? 'miss' : 'misses'} left` : 'Final whistle');
     this.ui.showBanner(title, `${detail} · ${tail}`, 'miss');
     if (!this.isDaily) this.ui.setMisses(this.missed);
@@ -1027,7 +1082,7 @@ export class Game {
 
   /** After the result (and replay): next kick or game over. */
   nextKick() {
-    const over = this.isDaily ? this.kick >= DAILY.kicks : this.missed >= RULES.maxMiss;
+    const over = this.isDaily ? this.kick >= DAILY.kicks : !this.isPractice && this.missed >= RULES.maxMiss;
     if (over) this.endGame();
     else this.spawnShot();
   }
@@ -1099,7 +1154,7 @@ export class Game {
     const replaying = this.phase === 'replay' && this.state === STATE.PLAYING;
 
     if (!this.paused) {
-      this.stadium.update(dt, playing);
+      this.stadium.update(dt, playing, this.state === STATE.MENU);
       if (replaying) {
         this.replay.apply(this.replayTime);
       } else {
