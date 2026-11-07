@@ -315,7 +315,7 @@ export class Game {
     this.audio.whistle();
     const cond = CONDITION_LABEL[this.condition];
     this.ui.toast(this.isDaily ? `Daily Challenge · ${cond} · ${DAILY.kicks} kicks` : `${cond} · Beat the wall, beat the keeper!`, 2400);
-    if (this.progress.firstTime('perfect')) this.delayedTip('Tip: release inside the green band for a Perfect Strike', 2400);
+    if (this.progress.firstTime('perfect')) this.delayedTip('Tip: release inside the green band for a Perfect Strike', 6500);
   }
 
   /** Show a tip a little later, unless the player has left the game by then. */
@@ -438,6 +438,20 @@ export class Game {
     if (this.state === STATE.PLAYING && random() < STICKER.chance) {
       const m = 30;
       this.sticker.show(rand(-this.goalWidth / 2 + m, this.goalWidth / 2 - m), rand(m, GOAL.height - m));
+      // Point it out: the first few times explain what it is, after that a short cue.
+      const seen = this.progress.data.tips.starSeen ?? 0;
+      this.progress.data.tips.starSeen = seen + 1;
+      this.progress.save();
+      this.audio.starAppear();
+      const text = seen < 3 ? '⭐ Golden star in the goal! Shoot through it to collect a sticker' : '⭐ Golden star!';
+      // On a run's first kick, let the start-of-match message show first.
+      if (this.kick === 0) {
+        const run = this.runId;
+        setTimeout(() => {
+          if (this.runId === run && this.kick === 0 && this.sticker.active && this.phase === 'aim') this.ui.toast(text, 3600);
+        }, 2500);
+      }
+      else this.ui.toast(text, seen < 3 ? 3600 : 1800);
     } else {
       this.sticker.hide();
     }

@@ -26,6 +26,20 @@ function glowTexture(color) {
   return new THREE.CanvasTexture(c);
 }
 
+function ringTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  ctx.lineWidth = 7;
+  ctx.shadowColor = 'rgba(255,255,255,0.9)';
+  ctx.shadowBlur = 10;
+  ctx.beginPath();
+  ctx.arc(64, 64, 50, 0, Math.PI * 2);
+  ctx.stroke();
+  return new THREE.CanvasTexture(c);
+}
+
 /** Spinning golden star that sometimes appears inside the goal mouth. */
 export class StickerTarget {
   constructor(scene) {
@@ -35,13 +49,18 @@ export class StickerTarget {
     });
     geo.center();
     this.star = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      color: 0xffd23f, emissive: 0xb07800, emissiveIntensity: 0.6, metalness: 0.8, roughness: 0.25,
+      color: 0xffd23f, emissive: 0xffb000, emissiveIntensity: 0.9, metalness: 0.7, roughness: 0.25,
     }));
     this.glow = new THREE.Sprite(new THREE.SpriteMaterial({
       map: glowTexture('rgba(255,210,63,0.9)'), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false,
     }));
-    this.glow.scale.setScalar(STICKER.radius * 4);
-    this.group.add(this.glow, this.star);
+    this.glow.scale.setScalar(STICKER.radius * 5.5);
+    // A bright white ring that pulses outwards: reads against any crowd colour behind the net.
+    this.ring = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: ringTexture(), transparent: true, depthWrite: false, depthTest: false,
+    }));
+    this.ring.renderOrder = 8;
+    this.group.add(this.glow, this.ring, this.star);
     this.group.visible = false;
     this.active = false;
     this.time = 0;
@@ -72,7 +91,11 @@ export class StickerTarget {
     this.group.position.y = this.base.y + Math.sin(this.time * 2.5) * 4;
     const s = this.group.scale.x;
     this.group.scale.setScalar(s + (1 - s) * Math.min(1, dt * 6));
-    this.glow.material.opacity = 0.6 + Math.sin(this.time * 5) * 0.2;
+    this.glow.material.opacity = 0.75 + Math.sin(this.time * 5) * 0.25;
+    this.glow.scale.setScalar(STICKER.radius * (5.5 + Math.sin(this.time * 5) * 0.8)); // breathing halo
+    const pulse = (this.time * 0.9) % 1;                       // ring expands and fades, once a second
+    this.ring.scale.setScalar(STICKER.radius * (2.6 + pulse * 2.4));
+    this.ring.material.opacity = 0.9 * (1 - pulse);
   }
 }
 

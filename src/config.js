@@ -72,7 +72,7 @@ export const PERFECT = { width: 0.09, min: 0.3, max: 0.72, reactionDelay: 0.06 }
 
 export const WIND = { startGoal: 2, perGoal: 0.12, max: 0.9, maxAccel: 320, kmh: 40 };
 export const BOSS = { every: 5, bonus: 10 };
-export const STICKER = { chance: 0.22, bonus: 5, radius: 16 };
+export const STICKER = { chance: 0.22, bonus: 5, radius: 22 };
 export const NEAR_MISS = { gap: 20, cmPerUnit: 1.83 };
 
 export const RULES = {

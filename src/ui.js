@@ -832,7 +832,7 @@ export class UI {
       el.innerHTML = '<span class="num"></span><div class="icon"></div><div class="name"></div>';
       el.querySelector('.num').textContent = `#${String(s.id).padStart(2, '0')}`;
       el.querySelector('.icon').textContent = s.icon;
-      el.querySelector('.name').textContent = owned ? s.name : 'Not found';
+      el.querySelector('.name').textContent = owned ? s.name : 'Not collected';
       album.appendChild(el);
     }
     $('sticker-count').textContent = `${progress.stickerCount} / ${STICKERS.length}`;
