@@ -448,3 +448,14 @@ kbd {
 .power-saver *, .power-saver *::before, .power-saver *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 .power-saver .motes, .power-saver .sweep, .power-saver .ray, .power-saver .rays { display: none !important; }
 .power-saver .dialog, .power-saver .results, .power-saver .inspector, .power-saver .summary { background-color: rgba(7, 12, 25, 0.94); }
+
+/* ---------------------------------------------------------------- graphics recovery notice */
+.gfx-notice { position: absolute; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; pointer-events: auto; background: rgba(6, 11, 23, 0.82); }
+.gfx-card { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 360px; padding: 26px; border-radius: 16px; background: #0b1428; border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; }
+.gfx-card b { font: 900 26px/1 var(--hero, sans-serif); text-transform: uppercase; }
+.gfx-card p { margin: 0; color: #9fb0c6; font-size: 14px; line-height: 1.5; }
+.gfx-spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.15); border-top-color: var(--accent); animation: gfx-spin 0.9s linear infinite; }
+@keyframes gfx-spin { to { transform: rotate(360deg); } }
+.gfx-notice .gfx-fail { display: none; }
+.gfx-notice.failed .gfx-fail { display: block; }
+.gfx-notice.failed .gfx-wait, .gfx-notice.failed .gfx-spinner { display: none; }

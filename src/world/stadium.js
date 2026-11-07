@@ -205,11 +205,17 @@ const BEAM_FRAG = /* glsl */`
   varying float vH;
   varying vec3 vNormal;
   varying vec3 vView;
+  // NaN-safe on mobile GPUs. The interpolated vH can dip just below 0 at the cone's base
+  // (it rests on the pitch), and pow() of a negative number is NaN there; normalize() of a
+  // zero vector is NaN too. A single NaN pixel is blown up by the bloom mip chain into
+  // large black rectangles, so every input here is kept in range.
   void main() {
-    float facing = abs(dot(normalize(vNormal), normalize(vView)));
-    float edge = pow(facing, 2.2);
-    float along = pow(vH, 1.6) * smoothstep(0.0, 0.25, vH);
-    gl_FragColor = vec4(color * intensity * edge * along, 1.0);
+    float denom = max(length(vNormal) * length(vView), 1e-4);
+    float facing = clamp(abs(dot(vNormal, vView)) / denom, 0.0, 1.0);
+    float edge = pow(max(facing, 1e-4), 2.2);
+    float h = clamp(vH, 0.0, 1.0);
+    float along = pow(max(h, 1e-4), 1.6) * smoothstep(0.0, 0.25, h);
+    gl_FragColor = vec4(max(color * intensity * edge * along, vec3(0.0)), 1.0);
   }`;
 
 function beamMaterial(color, intensity = 0) {

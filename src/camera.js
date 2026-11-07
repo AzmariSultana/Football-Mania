@@ -11,6 +11,9 @@ const _away = new THREE.Vector3();
 const _right = new THREE.Vector3();
 const _desired = new THREE.Vector3();
 const _look = new THREE.Vector3();
+const finite3 = (v) => Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+let warned = false;
+const warnOnce = (msg) => { if (!warned) { warned = true; console.warn(`[render] ${msg}`); } };
 
 export class CameraRig {
   constructor(camera) {
@@ -109,6 +112,20 @@ export class CameraRig {
         posK = ctx.phase === 'flight' ? 2.2 : 1.2;
         lookK = 5;
       }
+    }
+
+    // Never let a bad target (NaN from upstream maths) poison the camera: a NaN position
+    // persists through every later lerp and renders black for the rest of the session.
+    if (!finite3(_desired) || !finite3(_look)) {
+      _desired.copy(this.position);
+      _look.copy(this.look);
+    }
+    if (!finite3(this.position) || !finite3(this.look)) {
+      warnOnce('camera state became invalid; reset to a safe view');
+      this.position.set(0, 400, 1400);
+      this.look.set(0, 60, 300);
+      this.shakeAmount = 0;
+      this.cutNext = true;
     }
 
     if (this.cutNext) {

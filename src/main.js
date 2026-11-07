@@ -42,8 +42,13 @@ function start() {
   };
   game.applySettings('graphics');
 
+  // Size the drawing buffer to the canvas as displayed. During rotation, split screen or
+  // while hidden the browser can briefly report 0 (aspect → Infinity/NaN → an all-black
+  // frame), so those readings are ignored and the last good size is kept.
   const resize = () => {
-    const w = window.innerWidth, h = window.innerHeight;
+    const w = Math.round(canvas.clientWidth || window.innerWidth);
+    const h = Math.round(canvas.clientHeight || window.innerHeight);
+    if (!(w >= 2 && h >= 2)) return;
     renderer.setSize(w, h, false);
     post.setPixelRatio(renderer.getPixelRatio());
     post.setSize(w, h);
@@ -53,7 +58,20 @@ function start() {
     camera.updateProjectionMatrix();
     game.onResize(renderer.domElement.height, camera.fov);
   };
-  window.addEventListener('resize', resize);
+  // Mobile browsers report rotation and toolbar changes late and in several steps:
+  // resize now, next frame, and once more after the layout has settled.
+  let settle = 0;
+  const scheduleResize = () => {
+    resize();
+    requestAnimationFrame(resize);
+    clearTimeout(settle);
+    settle = setTimeout(resize, 300);
+  };
+  window.addEventListener('resize', scheduleResize);
+  window.visualViewport?.addEventListener('resize', scheduleResize);
+  screen.orientation?.addEventListener?.('change', scheduleResize);
+  window.addEventListener('orientationchange', scheduleResize);
+  document.addEventListener('fullscreenchange', scheduleResize);
   resize();
 
   // Adaptive resolution: drop the pixel ratio when frames get slow, restore it when there
@@ -104,8 +122,32 @@ function start() {
   game.applySettings('power');
   power.start();
 
+  // WebGL context loss (GPU reset, memory pressure, app backgrounded on mobile). Without
+  // handling, the canvas just stays black. Three.js restores its own state when the
+  // browser gives the context back; around that we pause the match, hold the loop and
+  // explain what's happening, offering a reload if the context doesn't come back.
+  const notice = document.getElementById('gfx-notice');
+  let reloadTimer = 0;
+  canvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault(); // allow the browser to restore it
+    console.warn('[render] WebGL context lost; pausing until it is restored');
+    game.autoPause();
+    power.setBlocked(true);
+    notice.classList.remove('hidden', 'failed');
+    clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(() => notice.classList.add('failed'), 5000);
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    console.info('[render] WebGL context restored');
+    clearTimeout(reloadTimer);
+    notice.classList.add('hidden');
+    resize();
+    power.setBlocked(false);
+  });
+  document.getElementById('gfx-reload').addEventListener('click', () => location.reload());
+
   window.footballMania = game; // handy for debugging from the console
-  game.power = power;
+  game.powerManager = power; // (not game.power: that's the shot power, 0..1)
 }
 
 setupPwa();

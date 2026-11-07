@@ -10,6 +10,30 @@ import { damp } from '../config.js';
 
 // Broadcast-style colour grade, applied after tone mapping (display space):
 // navy-tinted shadows, warm highlights, a soft S-curve, vignette and fine film grain.
+// Replaces non-finite or negative colours with black and caps runaway highlights.
+const SanitizeShader = {
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: /* glsl */`
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: /* glsl */`
+    uniform sampler2D tDiffuse;
+    varying vec2 vUv;
+    void main() {
+      vec3 c = texture2D(tDiffuse, vUv).rgb;
+      // Test the IEEE bit pattern (exponent all ones = NaN or Inf). Unlike isnan(), which
+      // compilers may assume can never be true and fold away, this can't be optimised out.
+      uvec3 bits = floatBitsToUint(c) & uvec3(0x7fffffffu);
+      if (any(greaterThanEqual(bits, uvec3(0x7f800000u)))) c = vec3(0.0);
+      // Negative colours and runaway highlights also break bloom: keep a sane range.
+      c = min(max(c, vec3(0.0)), vec3(64.0));
+      gl_FragColor = vec4(c, 1.0);
+    }`,
+};
+
 const GradeShader = {
   uniforms: {
     tDiffuse: { value: null },
@@ -44,7 +68,7 @@ const GradeShader = {
       col = mix(col, col * col * (3.0 - 2.0 * col), 0.22);
       // Vignette
       vec2 d = (vUv - 0.5) * vec2(1.15, 1.0);
-      col *= mix(1.0 - uVignette, 1.0, smoothstep(0.82, 0.18, length(d)));
+      col *= mix(1.0 - uVignette, 1.0, 1.0 - smoothstep(0.18, 0.82, length(d))); // edges in order: reversed smoothstep is undefined
       // Grain
       float n = fract(sin(dot(vUv * 1000.0 + uTime, vec2(12.9898, 78.233))) * 43758.5453);
       col += (n - 0.5) * uGrain;
@@ -75,6 +99,13 @@ export class PostFX {
 
     this.renderPass = new RenderPass(scene, camera);
     composer.addPass(this.renderPass);
+
+    // Firewall between the scene and the effects: any NaN / Inf / negative pixel a shader
+    // produces (mobile GPUs differ from desktop on edge cases) is neutralised here, before
+    // AO, depth of field and especially bloom, whose mip chain would grow one bad pixel
+    // into large black rectangles.
+    this.sanitize = new ShaderPass(SanitizeShader);
+    composer.addPass(this.sanitize);
 
     this.gtao = new GTAOPass(scene, camera, size.x, size.y);
     this.gtao.blendIntensity = 0.85;

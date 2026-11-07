@@ -39,8 +39,15 @@ export class PowerManager {
     this.watchBattery();
   }
 
+  /** Hold the loop (e.g. while the WebGL context is lost); releasing restarts it if visible. */
+  setBlocked(blocked) {
+    this.blocked = blocked;
+    if (blocked) this.stop();
+    else if (document.visibilityState !== 'hidden') this.start();
+  }
+
   start() {
-    if (this.running) return;
+    if (this.running || this.blocked) return;
     this.running = true;
     this.last = performance.now(); // no time jump after a pause
     this.renderer.setAnimationLoop(this.tick);
@@ -55,7 +62,9 @@ export class PowerManager {
   onAnimationFrame(now) {
     const mode = this.mode();
     const cap = this.capFor(mode);
-    const elapsed = (now - this.last) / 1000;
+    // The first rAF timestamp after start() can be earlier than the performance.now()
+    // taken there; never hand the game a negative time step.
+    const elapsed = Math.max(0, (now - this.last) / 1000);
     // Skip this display refresh when the state doesn't need a new frame yet
     // (small tolerance so a 60 Hz cap on a 60 Hz screen never drops frames).
     if (cap && elapsed < 1 / cap - 0.004) return;

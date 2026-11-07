@@ -557,6 +557,17 @@
       </div>
     </section>
 
+    <div id="gfx-notice" class="gfx-notice hidden" role="status" aria-live="polite">
+      <div class="gfx-card">
+        <span class="gfx-spinner" aria-hidden="true"></span>
+        <b class="gfx-wait">Restoring graphics…</b>
+        <b class="gfx-fail">Graphics couldn't restart</b>
+        <p class="gfx-wait">The graphics driver was reset. Your match is paused and will be right back.</p>
+        <p class="gfx-fail">Reload to continue. Your progress is saved.</p>
+        <button class="btn primary gfx-fail" id="gfx-reload">Reload</button>
+      </div>
+    </div>
+
     <div id="fatal" class="screen hidden">
       <div class="dialog">
         <h2 class="screen-title">Can't start the game</h2>

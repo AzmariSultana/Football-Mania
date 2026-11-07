@@ -22,7 +22,8 @@ const FRAG = /* glsl */`
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (d > 0.5 || vAlpha <= 0.0) discard;
-    float a = uSoft > 0.5 ? smoothstep(0.5, 0.0, d) : smoothstep(0.5, 0.4, d);
+    // smoothstep with edge0 > edge1 is undefined in GLSL (garbage on some mobile GPUs).
+    float a = uSoft > 0.5 ? 1.0 - smoothstep(0.0, 0.5, d) : 1.0 - smoothstep(0.4, 0.5, d);
     gl_FragColor = vec4(vColor, a * vAlpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
