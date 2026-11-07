@@ -16,7 +16,19 @@ function webglAvailable() {
   }
 }
 
-function start() {
+// The 3D boards, flags and goal labels draw text onto canvases once, at build time, so
+// the brand font must be ready first. Capped, so a slow or blocked font CDN never holds
+// up the game (the splash is still playing meanwhile).
+function brandFontsReady(timeout = 1500) {
+  if (!document.fonts?.load) return Promise.resolve();
+  const load = Promise.all([
+    document.fonts.load('800 42px "Big Shoulders Display"'),
+    document.fonts.load('900 42px "Big Shoulders Display"'),
+  ]).catch(() => {});
+  return Promise.race([load, new Promise((ok) => setTimeout(ok, timeout))]);
+}
+
+async function start() {
   const canvas = document.getElementById('scene');
   let game = null;
   const splash = runSplash({
@@ -44,6 +56,7 @@ function start() {
     return;
   }
 
+  await brandFontsReady();
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;

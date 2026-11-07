@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { GRID_LENGTH, FIELD_BACK, FIELD_FRONT, GOAL } from '../config.js';
+import { GRID_LENGTH, FIELD_BACK, FIELD_FRONT, GOAL, BRAND_FONT } from '../config.js';
 
 const _crowdMatrix = new THREE.Matrix4();
 const FIELD_W = GRID_LENGTH * 2;
@@ -110,7 +110,7 @@ function boardTexture(offset) {
     // Subtle LED scanlines
     ctx.fillStyle = 'rgba(0,0,0,0.12)';
     for (let y = y0; y < y0 + BOARD_FACE_H; y += 3) ctx.fillRect(0, y, c.width, 1);
-    ctx.font = '700 40px "Bebas Neue", Impact, sans-serif';
+    ctx.font = `800 42px ${BRAND_FONT}`;
     ctx.textBaseline = 'middle';
     let x = 24;
     for (let i = 0; x < c.width; i++) {
@@ -152,7 +152,7 @@ function flagTexture(kind) {
   ctx.beginPath();
   ctx.moveTo(0, 56); ctx.lineTo(128, 18); ctx.lineTo(128, 34); ctx.lineTo(0, 72);
   ctx.fill();
-  ctx.font = '700 30px "Bebas Neue", Impact, sans-serif';
+  ctx.font = `900 32px ${BRAND_FONT}`;
   ctx.fillText('FM', 12, 36);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;

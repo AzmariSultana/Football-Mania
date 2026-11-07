@@ -166,6 +166,10 @@ export function zoneName(points) {
   return 'Centre';
 }
 
+// Brand display face (loaded from Google Fonts in index.html). Canvas textures use it too,
+// so main.js waits for it before building the scene.
+export const BRAND_FONT = '"Big Shoulders Display", Impact, "Arial Narrow", sans-serif';
+
 export const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const rand = (lo, hi) => lo + random() * (hi - lo);

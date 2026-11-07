@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Football Mania</title>
+  <!-- Small-size version of logo.svg: fewer details, bolder shapes, so it stays
+       readable as a browser tab icon. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14254a"/>
+      <stop offset="1" stop-color="#060b17"/>
+    </linearGradient>
+    <linearGradient id="curve" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#c6ff3d" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#d8ff70"/>
+    </linearGradient>
+    <clipPath id="ball"><circle cx="38" cy="26" r="17"/></clipPath>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <path d="M4 61C9 42 20 31 37 28C24 36 17 47 17 62Z" fill="url(#curve)"/>
+  <circle cx="38" cy="26" r="17" fill="#f3f6fa"/>
+  <g clip-path="url(#ball)" fill="#0b1428">
+    <path d="M38 19.3l6.4 4.7-2.5 7.5h-7.8l-2.5-7.5z"/>
+    <path d="M38 8.4l3.6 2.6-1.4 4.1h-4.4l-1.4-4.1z"/>
+    <path d="M55 23.5l-.9 4.4-4.1.6-1.8-4 2.9-3.2z"/>
+    <path d="M21 23.5l3.9-2.2 2.9 3.2-1.8 4-4.1-.6z"/>
+    <path d="M49 40.5l-4.2.9-1.8-3.9 2.6-3.4 4.1 1.1z"/>
+    <path d="M27 40.5l-.7-5.3 4.1-1.1 2.6 3.4-1.8 3.9z"/>
+  </g>
+</svg>

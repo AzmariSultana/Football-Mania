@@ -749,12 +749,15 @@ export class UI {
   }
 
   /** Slide-in card for achievements and stickers. */
-  achievementToast({ icon, name, desc }, kicker = 'Achievement unlocked', color = null) {
+  achievementToast({ id, icon, name, desc }, kicker = 'Achievement unlocked', color = null) {
     const el = document.createElement('div');
     el.className = `ach-toast${color ? ' tinted' : ''}`;
     if (color) el.style.setProperty('--c', color);
     el.innerHTML = `<div class="icon"></div><div><div class="kicker"></div><b></b><span></span></div>`;
-    el.querySelector('.icon').textContent = icon;
+    // Achievements show the same badge as the trophy cabinet; anything else keeps its glyph.
+    const iconEl = el.querySelector('.icon');
+    if (TROPHY_META[id]) { iconEl.classList.add('badge'); iconEl.innerHTML = badgeSvg(id); }
+    else iconEl.textContent = icon;
     el.querySelector('.kicker').textContent = kicker;
     el.querySelector('b').textContent = name;
     el.querySelector('span').textContent = desc;

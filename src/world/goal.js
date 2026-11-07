@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GOAL, getGoalPoints } from '../config.js';
+import { GOAL, getGoalPoints, BRAND_FONT } from '../config.js';
 
 const NET_CELL = 11;
 
@@ -20,7 +20,7 @@ function labelTexture(text, color) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.font = '700 84px "Bebas Neue", Impact, sans-serif';
+  ctx.font = `900 88px ${BRAND_FONT}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = color;

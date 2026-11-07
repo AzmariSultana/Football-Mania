@@ -26,6 +26,8 @@ const ASSETS = [
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',
   './icons/favicon-32.png',
+  './icons/favicon.svg',
+  './icons/logo.svg',
   './src/main.js',
   './src/pwa.js',
   './src/game.js',

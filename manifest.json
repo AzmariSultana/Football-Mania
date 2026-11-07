@@ -1,24 +1,25 @@
 {
   "id": "./",
-  "name": "Football Mania 3D",
+  "name": "Football Mania",
   "short_name": "Football Mania",
-  "description": "3D free kick game: bend it round the wall, beat the keeper and pick out the top corners.",
+  "description": "Free kick challenge in 3D: bend it round the wall, beat the keeper and pick out the top corners.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
   "orientation": "landscape",
-  "background_color": "#070b14",
-  "theme_color": "#070b14",
+  "background_color": "#060b17",
+  "theme_color": "#060b17",
   "categories": ["games", "sports"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "screenshots": [
     { "src": "docs/screenshots/aiming.jpg", "sizes": "1600x900", "type": "image/jpeg", "form_factor": "wide", "label": "Lining up a free kick" },
-    { "src": "docs/screenshots/goal.jpg", "sizes": "1600x900", "type": "image/jpeg", "form_factor": "wide", "label": "Top-corner goal on a streak" },
-    { "src": "docs/screenshots/boss.jpg", "sizes": "1600x900", "type": "image/jpeg", "form_factor": "wide", "label": "Boss keeper" }
+    { "src": "docs/screenshots/night.jpg", "sizes": "1600x900", "type": "image/jpeg", "form_factor": "wide", "label": "Under the floodlights" },
+    { "src": "docs/screenshots/rain.jpg", "sizes": "1600x900", "type": "image/jpeg", "form_factor": "wide", "label": "Bending it in the rain" }
   ]
 }

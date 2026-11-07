@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/banner.png" alt="Football Mania: free kick challenge" width="800"></p>
+
 # Football Mania
 
 A 3D free kick game for the browser, built with Three.js. Bend the ball around the wall, beat the keeper and aim for the top corners.
