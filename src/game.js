@@ -42,6 +42,7 @@ const MISS_TEXT = {
   time: ['TIME UP', ['The shot clock ran out']],
 };
 const pick = (list) => list[(Math.random() * list.length) | 0];
+const AUDIO_SCENE = { play: 'game', paused: 'paused', menu: 'menu', overlay: 'overlay' };
 
 const _v = new THREE.Vector3();
 const _vel = new THREE.Vector3();
@@ -222,6 +223,7 @@ export class Game {
     if (!key || key === 'camera') this.rig.mode = s.get('camera') === 'first' ? CAM_FIRST_PERSON : CAM_ORBIT;
     if (!key || key === 'graphics') this.onGraphics?.(s.get('graphics'));
     if (!key || key === 'power') this.onPower?.(s.get('power'));
+    if (!key || key === 'music') this.audio.setMusicEnabled(s.get('music') === 'on');
     this.ui.syncSettings(s);
   }
 
@@ -260,6 +262,13 @@ export class Game {
     const screen = this.ui.current;
     if (this.state === STATE.PLAYING) return this.paused || screen === 'help' ? 'paused' : 'play';
     return screen === 'menu' ? 'menu' : 'overlay';
+  }
+
+  /** As the splash dissolves: start the camera high and wide, then let it glide into the menu shot. */
+  introSweep() {
+    if (this.state !== STATE.MENU || this.rig.motion === false) return;
+    this.rig.position.set(1400, 640, 2400);
+    this.rig.look.set(0, 30, 0);
   }
 
   get isPractice() {
@@ -1245,6 +1254,9 @@ export class Game {
     this.updateFov(realDt);
     this.kicker.root.visible = !(this.rig.mode === CAM_FIRST_PERSON && playing && !replaying);
     this.rig.update(realDt, this.cameraContext());
+    // Audio mix follows the screen: relaxed music in menus, a quiet groove in matches,
+    // muffled when paused. setScene is a no-op unless the scene changed, and it fades.
+    this.audio.setScene(AUDIO_SCENE[this.frameMode]);
     if (playing) this.updateWindHud();
   }
 

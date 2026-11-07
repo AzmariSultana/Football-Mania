@@ -8,6 +8,7 @@ export const SETTING_OPTIONS = {
   camera: ['broadcast', 'first'],
   motion: ['on', 'off'],
   power: ['auto', 'on', 'off'],
+  music: ['on', 'off'],
 };
 
 const DEFAULTS = {
@@ -15,6 +16,7 @@ const DEFAULTS = {
   camera: 'broadcast',
   motion: matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'off' : 'on',
   power: 'auto', // battery saver: auto = when the battery is low and not charging
+  music: 'on',
 };
 
 export class Settings {

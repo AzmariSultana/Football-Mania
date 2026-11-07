@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="booting">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="css/features.css">
   <link rel="stylesheet" href="css/menu.css">
   <link rel="stylesheet" href="css/hub.css">
+  <link rel="stylesheet" href="css/splash.css">
   <script type="importmap">
     {
       "imports": {
@@ -33,6 +34,30 @@
 </head>
 <body>
   <canvas id="scene" aria-label="Football Mania 3D game view"></canvas>
+
+  <!-- Opening splash: pure CSS, so it plays from the first paint while the game loads. -->
+  <div id="splash" class="splash" role="dialog" aria-label="Football Mania is starting. Press any key or tap to skip.">
+    <div class="splash-flare left" aria-hidden="true"></div>
+    <div class="splash-flare right" aria-hidden="true"></div>
+    <div class="splash-pitch" aria-hidden="true"></div>
+    <div class="splash-center">
+      <div class="splash-ball" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#f5f7fb"/><path d="M32 20l11.4 8.3-4.4 13.4H25l-4.4-13.4z" fill="#0b1428"/><path d="M32 2.4l5.4 4.3-2 6.2h-6.8l-2-6.2zM60 26.6l-1.4 6.7-6.2.8-2.7-6.2 4.3-4.8zM50.6 55.6l-6.4 1.4-2.7-5.9 4-5.1 6.2 1.8zM19.8 57l-6.4-1.4-1.1-7.8 6.2-1.8 4 5.1zM4 26.6l5.9-3.5 4.3 4.8-2.7 6.2-6.2-.8z" fill="#0b1428"/><circle cx="32" cy="32" r="30" fill="none" stroke="rgba(11,20,40,.35)" stroke-width="1.5"/></svg>
+      </div>
+      <div class="splash-eyebrow"><i></i>Free kick challenge<i></i></div>
+      <h1 class="splash-title"><span class="t1">Football</span><span class="t2">Mania</span></h1>
+      <div class="splash-bar" aria-hidden="true"><i></i></div>
+    </div>
+    <div class="splash-skip">Tap or press any key</div>
+  </div>
+  <script>
+    // Remember a skip made before the game code has loaded (src/splash.js reads this).
+    (function () {
+      var mark = function () { window.__splashSkip = true; };
+      addEventListener('pointerdown', mark, { once: true, capture: true });
+      addEventListener('keydown', mark, { once: true, capture: true });
+    })();
+  </script>
 
   <div id="ui">
     <!-- In-game HUD -->
@@ -347,6 +372,10 @@
         <div class="setting-row">
           <div><b>Sound</b><small>Crowd, kicks and whistles</small></div>
           <div class="seg" data-setting="sound"><button data-value="on">On</button><button data-value="off">Off</button></div>
+        </div>
+        <div class="setting-row">
+          <div><b>Music</b><small>Soundtrack under the crowd and effects</small></div>
+          <div class="seg" data-setting="music"><button data-value="on">On</button><button data-value="off">Off</button></div>
         </div>
         <div class="setting-row">
           <div><b>Graphics</b><small>Bloom, ambient occlusion, depth of field</small></div>

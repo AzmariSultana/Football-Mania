@@ -3,6 +3,7 @@ import { Game } from './game.js';
 import { setupPwa } from './pwa.js';
 import { PostFX } from './fx/post.js';
 import { PowerManager } from './power.js';
+import { runSplash } from './splash.js';
 
 // Replaces python main(): GLUT window + idle loop -> WebGL canvas + requestAnimationFrame.
 
@@ -17,7 +18,25 @@ function webglAvailable() {
 
 function start() {
   const canvas = document.getElementById('scene');
+  let game = null;
+  const splash = runSplash({
+    // Skipping is a user gesture: the one moment browsers let audio start. Play a short
+    // rising chord and a crowd swell, then the menu music fades in on its own.
+    onGesture: () => {
+      if (!game) return;
+      game.audio.unlock();
+      game.audio.sting();
+      game.audio.setCrowdLevel(0.5);
+      setTimeout(() => game?.audio.setCrowdLevel(0), 1400);
+    },
+    onDone: () => {
+      if (!game) return;
+      game.introSweep();
+      game.ui.animateMenuStats();
+    },
+  });
   if (!webglAvailable()) {
+    splash.finish();
     document.getElementById('fatal-msg').textContent =
       'Your browser or device does not support WebGL 2. Try a recent version of Chrome, Edge, Firefox or Safari with hardware acceleration enabled.';
     document.getElementById('fatal').classList.remove('hidden');
@@ -35,7 +54,7 @@ function start() {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, 1, 5, 14000);
   const post = new PostFX(renderer, scene, camera);
-  const game = new Game(renderer, scene, camera);
+  game = new Game(renderer, scene, camera);
   game.onGraphics = (q) => {
     post.setQuality(q);
     renderer.shadowMap.type = q === 'low' ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
@@ -121,6 +140,9 @@ function start() {
   game.onPower = (pref) => power.setPreference(pref);
   game.applySettings('power');
   power.start();
+  // Dissolve the splash only after the scene has really been drawn (two frames: the first
+  // rAF can run before the first render has been composited).
+  requestAnimationFrame(() => requestAnimationFrame(() => splash.ready()));
 
   // WebGL context loss (GPU reset, memory pressure, app backgrounded on mobile). Without
   // handling, the canvas just stays black. Three.js restores its own state when the
